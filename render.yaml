@@ -22,6 +22,10 @@ services:
         value: https://fitness7gym.in
       - key: ASSISTANT_MODEL
         value: claude-haiku-4-5-20251001
+      - key: FOOD_TEXT_MODEL          # /api/food/parse — text, tool-use, cheap
+        value: claude-haiku-4-5-20251001
+      - key: FOOD_PHOTO_MODEL         # /api/food/photo — vision
+        value: claude-sonnet-4-5
 
       # ---- Secrets: Render asks for these on the Blueprint creation screen ----
       # Anthropic console → API keys
@@ -37,6 +41,10 @@ services:
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY   # sb_publishable_...  safe in the browser
+        sync: false
+
+      # Owner dashboard at /owner — any password of 8+ characters; blank disables it
+      - key: OWNER_PASSWORD
         sync: false
 
       # WhatsApp Cloud API — optional; leave blank and wa.me links still work

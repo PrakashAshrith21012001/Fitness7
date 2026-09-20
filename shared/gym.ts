@@ -7,6 +7,17 @@
 
 export const CONFIRM = "⚠️ confirm with owner";
 
+/**
+ * Open questions for the owner that are not a single field above.
+ * Answer these before launch; each one changes a setting, not a screen.
+ */
+export const confirmWithOwner = [
+  "SMS provider for phone sign-in codes (Twilio, MSG91, or whatever the gym already pays for) — supabase/README.md §2. Until then test numbers with fixed codes.",
+  "Is calorie / food tracking part of every plan, or only Personal Training? (Today every signed-in member sees Food. Gating is one check in mobile/src/app/food/index.tsx.)",
+  "Evening closing time: 9:30 PM (the creative) or 10:00 PM (the listing)?",
+  "Second branch on Palacode Main Road — list it on the site or not?",
+] as const;
+
 /* ------------------------------------------------------------------ */
 /* Contact                                                            */
 /* ------------------------------------------------------------------ */
@@ -97,6 +108,8 @@ export type GymClass = {
   schedule: string;
   /** Lucide icon name, rendered on web; mapped to an emoji on mobile. */
   icon: string;
+  /** Photo of the floor for the class card on the site — web/public/classes/<id>.jpg */
+  image?: string;
 };
 
 export const classes: GymClass[] = [
@@ -110,6 +123,7 @@ export const classes: GymClass[] = [
     intensity: "All levels",
     schedule: "Mon / Wed / Fri · 6:00 AM & 6:00 PM",
     icon: "Dumbbell",
+    image: "/classes/strength.jpg",
   },
   {
     id: "hiit",
@@ -121,6 +135,7 @@ export const classes: GymClass[] = [
     intensity: "High",
     schedule: "Tue / Thu · 6:30 AM & 7:00 PM",
     icon: "Flame",
+    image: "/classes/hiit.jpg",
   },
   {
     id: "crossfit",
@@ -132,6 +147,7 @@ export const classes: GymClass[] = [
     intensity: "High",
     schedule: "Mon – Sat · 7:00 PM",
     icon: "Zap",
+    image: "/classes/crossfit.jpg",
   },
   {
     id: "cardio",
@@ -143,6 +159,7 @@ export const classes: GymClass[] = [
     intensity: "Moderate",
     schedule: "All open hours",
     icon: "HeartPulse",
+    image: "/classes/cardio.jpg",
   },
   {
     id: "yoga",
@@ -154,6 +171,7 @@ export const classes: GymClass[] = [
     intensity: "Low",
     schedule: "Tue / Thu / Sat · 6:00 AM",
     icon: "Wind",
+    image: "/classes/yoga.jpg",
   },
   {
     id: "ladies",
@@ -165,6 +183,7 @@ export const classes: GymClass[] = [
     intensity: "All levels",
     schedule: "Mon – Sat · 11:00 AM – 1:00 PM",
     icon: "Sparkles",
+    image: "/classes/ladies.jpg",
   },
   {
     id: "personal",
@@ -176,6 +195,7 @@ export const classes: GymClass[] = [
     intensity: "All levels",
     schedule: "By appointment",
     icon: "Target",
+    image: "/classes/personal.jpg",
   },
   {
     id: "combat",
@@ -187,6 +207,7 @@ export const classes: GymClass[] = [
     intensity: "High",
     schedule: "Wed / Sat · 7:30 PM",
     icon: "Swords",
+    image: "/classes/combat.jpg",
   },
 ];
 

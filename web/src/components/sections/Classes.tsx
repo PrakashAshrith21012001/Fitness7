@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { ArrowUpRight, Clock } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Clock } from "lucide-react";
 import { classes, wa } from "@f7/content";
 import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -11,104 +10,180 @@ import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 
 const intensityStyles: Record<string, string> = {
-  Low: "text-muted border-line bg-white/[0.03]",
-  Moderate: "text-amber-300 border-amber-300/25 bg-amber-300/5",
-  High: "text-red-400 border-red-400/25 bg-red-400/5",
-  "All levels": "text-lime border-lime/25 bg-green/5",
+  Low: "text-white/85 border-white/25 bg-black/35",
+  Moderate: "text-amber-200 border-amber-200/40 bg-black/45",
+  High: "text-red-300 border-red-300/40 bg-black/45",
+  "All levels": "text-lime border-lime/40 bg-black/45",
 };
 
+/**
+ * The classes rail.
+ *
+ * A native scroll-snap track rather than a JS slider: it drags on touch,
+ * flicks on a trackpad, tabs with a keyboard and needs no library. The arrows
+ * scroll by one card and disable at the ends; the bar underneath reports
+ * position, so nobody has to guess how much is left.
+ */
 export function Classes() {
-  const [active, setActive] = useState<string | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
+
+  const measure = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setProgress(max > 0 ? el.scrollLeft / max : 0);
+    setAtStart(el.scrollLeft < 8);
+    setAtEnd(el.scrollLeft > max - 8);
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      el.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [measure]);
+
+  const step = (dir: 1 | -1) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>("[data-card]");
+    const by = card ? card.offsetWidth + 20 : el.clientWidth * 0.8;
+    el.scrollBy({ left: by * dir, behavior: "smooth" });
+  };
 
   return (
     <Section id="classes">
-      <SectionHeading
-        eyebrow="What we run"
-        title="Eight ways to get strong"
-        body="Every class is coached — not a room with music and a timer. Pick one, or move between them as your programme changes."
-      />
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <SectionHeading
+          eyebrow="What we run"
+          title="Eight ways to get strong"
+          body="Every class is coached — not a room with music and a timer. Pick one, or move between them as your programme changes."
+        />
 
-      <div className="mt-16 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-        {classes.map((cls, i) => {
-          const isOpen = active === cls.id;
-          return (
-            <Reveal key={cls.id} delay={(i % 4) * 0.06} className="flex bg-ink">
-              <button
-                type="button"
-                onClick={() => setActive(isOpen ? null : cls.id)}
-                aria-expanded={isOpen}
-                className="group relative flex h-full w-full flex-col p-7 text-left transition-colors duration-300 hover:bg-surface"
-              >
-                <span className="pointer-events-none absolute inset-x-0 top-0 h-px scale-x-0 bg-green transition-transform duration-500 group-hover:scale-x-100" />
+        <div className="hidden shrink-0 items-center gap-3 pb-2 lg:flex">
+          {([
+            ["Previous classes", ArrowLeft, -1 as const, atStart],
+            ["More classes", ArrowRight, 1 as const, atEnd],
+          ] as const).map(([label, Ico, dir, disabled]) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => step(dir)}
+              disabled={disabled}
+              aria-label={label}
+              className={cn(
+                "grid size-12 place-items-center rounded-full border border-line text-white transition-all duration-300",
+                disabled
+                  ? "cursor-not-allowed opacity-35"
+                  : "hover:border-lime hover:text-lime active:scale-95",
+              )}
+            >
+              <Ico className="size-5" strokeWidth={1.8} />
+            </button>
+          ))}
+        </div>
+      </div>
 
-                <span className="mb-6 inline-flex size-12 items-center justify-center rounded-2xl border border-line bg-surface text-lime transition-all duration-300 group-hover:border-lime/40 group-hover:bg-green/10">
-                  <Icon name={cls.icon} className="size-5" />
-                </span>
-
-                <h3 className="text-lg font-semibold tracking-tight text-white">
-                  {cls.name}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {cls.tagline}
-                </p>
-
-                <AnimatePresence initial={false}>
-                  {isOpen ? (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <p className="pt-4 text-sm leading-relaxed text-white/70">
-                        {cls.description}
-                      </p>
-                    </motion.div>
+      <Reveal>
+        <div
+          ref={trackRef}
+          className="no-scrollbar mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain pb-2"
+          style={{ scrollPaddingInline: "0px" }}
+        >
+          {classes.map((cls) => (
+            <article
+              key={cls.id}
+              data-card
+              className="w-[80%] shrink-0 snap-start sm:w-[47%] lg:w-[31.5%] xl:w-[30%]"
+            >
+              <div className="group flex h-full flex-col overflow-hidden rounded-3xl border border-line bg-surface transition-colors duration-300 hover:border-lime/40">
+                {/* Photograph of the floor, with the name laid over it */}
+                <div className="relative aspect-[4/5] overflow-hidden bg-ink">
+                  {cls.image ? (
+                    <img
+                      src={cls.image}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="size-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-105"
+                    />
                   ) : null}
-                </AnimatePresence>
 
-                <div className="mt-6 flex flex-wrap items-center gap-2 pt-4">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/35" />
+
+                  <span className="absolute left-5 top-5 grid size-11 place-items-center rounded-2xl border border-white/20 bg-black/45 text-lime backdrop-blur-sm">
+                    <Icon name={cls.icon} className="size-5" />
+                  </span>
+
                   <span
                     className={cn(
-                      "rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider",
+                      "absolute right-5 top-5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur-sm",
                       intensityStyles[cls.intensity],
                     )}
                   >
                     {cls.intensity}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted">
-                    <Clock className="size-3" strokeWidth={2} />
-                    {cls.durationMin} min
-                  </span>
+
+                  <div className="absolute inset-x-0 bottom-0 p-5">
+                    <h3 className="text-xl font-semibold leading-tight tracking-tight text-white">
+                      {cls.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-white/75">{cls.tagline}</p>
+                  </div>
                 </div>
 
-                <p className="mt-3 text-[11px] font-medium leading-relaxed text-white/45">
-                  {cls.schedule}
-                </p>
+                {/* What a session is */}
+                <div className="flex flex-1 flex-col p-6">
+                  <p className="text-sm leading-relaxed text-muted">{cls.description}</p>
 
-                <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-lime opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  {isOpen ? "Show less" : "Read more"}
-                </span>
-              </button>
-            </Reveal>
-          );
-        })}
-      </div>
+                  <div className="mt-auto flex items-end justify-between gap-4 border-t border-line pt-5 [margin-top:1.5rem]">
+                    <div>
+                      <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-lime">
+                        <Clock className="size-3.5" strokeWidth={2} />
+                        {cls.durationMin} min
+                      </span>
+                      <span className="mt-1.5 block text-xs leading-relaxed text-muted">
+                        {cls.schedule}
+                      </span>
+                    </div>
 
-      <Reveal delay={0.1}>
-        <div className="mt-10 flex justify-center">
-          <a
-            href={wa.general()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors hover:text-lime"
-          >
-            Not sure which one suits you? Ask a coach on WhatsApp
-            <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2.2} />
-          </a>
+                    <a
+                      href={wa.class(cls.name)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Ask about ${cls.name} on WhatsApp`}
+                      className="grid size-11 shrink-0 place-items-center rounded-full border border-line text-white/70 transition-colors hover:border-lime hover:bg-green/10 hover:text-lime"
+                    >
+                      <ArrowUpRight className="size-4" strokeWidth={2} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </Reveal>
+
+      {/* How far along the rail you are */}
+      <div className="mt-8 flex items-center gap-5">
+        <div className="h-px flex-1 bg-line">
+          <div
+            className="h-px bg-green transition-[width,transform] duration-200"
+            style={{ width: `${Math.max(12, 100 / Math.max(classes.length - 2, 1))}%`, transform: `translateX(${progress * (100 * Math.max(classes.length - 2, 1) - 100)}%)` }}
+          />
+        </div>
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.22em] text-muted">
+          Swipe
+        </span>
+      </div>
     </Section>
   );
 }

@@ -8,12 +8,15 @@ import { radius, type } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { useSession, type Goal, type Slot } from "@/state/session";
 import { Body, Display, LimeButton } from "@/components/ui";
+import { NumbersForm, type Numbers } from "@/components/NumbersForm";
 
 /**
- * Three questions, one per screen, progress at the top. Each one changes what
+ * Four questions, one per screen, progress at the top. Each one changes what
  * the app shows next — name for the greeting, goal for the class suggestions,
  * slot so a woman who wants the ladies-only hours never sees the wrong
- * timings. Nothing here is collected because a form had space for it.
+ * timings, and (optional, skippable) height/age/sex/activity so the Food
+ * screen can show a daily target. Nothing here is collected because a form
+ * had space for it.
  */
 
 const GOALS: { id: Goal; label: string; hint: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -38,9 +41,15 @@ export default function Onboarding() {
   const [name, setName] = useState(member?.name ?? "");
   const [goal, setGoal] = useState<Goal | undefined>(member?.goal);
   const [slot, setSlot] = useState<Slot | undefined>(member?.slot);
-  const total = 3;
+  const [numbers, setNumbers] = useState<Numbers>({});
+  const total = 4;
 
-  const canNext = step === 0 ? name.trim().length >= 2 : step === 1 ? !!goal : !!slot;
+  const numbersComplete = !!(numbers.heightCm && numbers.age && numbers.sex && numbers.activity);
+  const canNext = step === 0 ? name.trim().length >= 2 : step === 1 ? !!goal : step === 2 ? !!slot : numbersComplete;
+
+  const finish = async (withNumbers: boolean) => {
+    await update({ name: name.trim(), goal, slot, onboarded: true, ...(withNumbers ? numbers : {}) });
+  };
 
   const next = async () => {
     if (!canNext) return;
@@ -49,7 +58,7 @@ export default function Onboarding() {
       setStep(step + 1);
       return;
     }
-    await update({ name: name.trim(), goal, slot, onboarded: true });
+    await finish(true);
   };
 
   const Option = ({ selected, onPress, label, hint, icon }: { selected: boolean; onPress: () => void; label: string; hint?: string; icon?: keyof typeof Ionicons.glyphMap }) => (
@@ -125,12 +134,23 @@ export default function Onboarding() {
               {GOALS.map((g) => <Option key={g.id} selected={goal === g.id} onPress={() => setGoal(g.id)} label={g.label} hint={g.hint} icon={g.icon} />)}
             </View>
           </>
-        ) : (
+        ) : step === 2 ? (
           <>
-            <Body size="micro" style={{ letterSpacing: 1.4 }}>LAST ONE</Body>
+            <Body size="micro" style={{ letterSpacing: 1.4 }}>ALMOST THERE</Body>
             <Display size="h1" style={{ marginTop: 8 }}>When do you usually train?</Display>
             <View style={{ gap: 10, marginTop: 24 }}>
               {SLOTS.map((s) => <Option key={s.id} selected={slot === s.id} onPress={() => setSlot(s.id)} label={s.label} hint={s.hint} />)}
+            </View>
+          </>
+        ) : (
+          <>
+            <Body size="micro" style={{ letterSpacing: 1.4 }}>OPTIONAL · FOR YOUR DAILY TARGET</Body>
+            <Display size="h1" style={{ marginTop: 8 }}>Your numbers</Display>
+            <Body style={{ marginTop: 8 }}>
+              With these the Food screen can show a daily energy and protein target. Skip it and add them later in Settings.
+            </Body>
+            <View style={{ marginTop: 24 }}>
+              <NumbersForm value={numbers} onChange={setNumbers} autoFocus />
             </View>
           </>
         )}
@@ -142,6 +162,16 @@ export default function Onboarding() {
           onPress={next}
           style={{ marginTop: 24, opacity: canNext ? 1 : 0.5 }}
         />
+        {step === total - 1 ? (
+          <Pressable
+            onPress={() => finish(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Skip for now"
+            style={{ minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 8 }}
+          >
+            <Body size="small" style={{ color: colors.lime, fontWeight: "600" }}>Skip for now</Body>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );

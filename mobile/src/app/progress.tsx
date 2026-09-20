@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { shortDate, wa } from "@f7/content";
+import { fmtKcal, shortDate, wa } from "@f7/content";
 import { radius, type } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { useSession, today } from "@/state/session";
+import { useFood } from "@/state/food";
+import { targetFor } from "@/components/TargetCard";
 import { Body, Card, Display, Eyebrow, LimeButton } from "@/components/ui";
 import { Screen } from "@/components/Screen";
 import { WeekStrip } from "@/components/WeekStrip";
@@ -18,8 +20,21 @@ import { WeekStrip } from "@/components/WeekStrip";
 export default function Progress() {
   const colors = useColors();
   const { member, logWeight } = useSession();
+  const { totals } = useFood();
   const [kg, setKg] = useState("");
   if (!member) return null;
+
+  // Last 7 days of energy, oldest first
+  const target = targetFor(member);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return { iso, label: "SMTWTFS"[d.getDay()], ...totals(iso) };
+  });
+  const maxKcal = Math.max(target?.kcal ?? 0, ...days.map((d) => d.kcal), 1);
+  const loggedDays = days.filter((d) => d.count).length;
+  const hideCal = !!member.hideCalories;
 
   const weights = member.weights.slice(-10);
   const latest = member.weights[member.weights.length - 1];
@@ -192,6 +207,49 @@ export default function Progress() {
           </Body>
         ) : null}
       </Card>
+
+      {/* Food — 7-day energy bars next to the weight chart */}
+      {!hideCal ? (
+        <Card style={{ marginTop: 16 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <View>
+              <Eyebrow>Food · last 7 days</Eyebrow>
+              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6, marginTop: 6 }}>
+                <Display size="h1">{loggedDays ? fmtKcal(Math.round(days.reduce((a, d) => a + d.kcal, 0) / loggedDays)) : "—"}</Display>
+                <Body size="small">kcal a day, average</Body>
+              </View>
+            </View>
+            {target ? <Body size="small">target {fmtKcal(target.kcal)}</Body> : null}
+          </View>
+          {loggedDays ? (
+            <View style={{ marginTop: 18 }}>
+              <View style={{ height: 96, justifyContent: "flex-end" }}>
+                {target ? (
+                  <View style={{ position: "absolute", left: 0, right: 0, bottom: (target.kcal / maxKcal) * 96, height: 1, backgroundColor: colors.line }} />
+                ) : null}
+                <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, height: 96 }}>
+                  {days.map((d) => {
+                    const h = d.count ? Math.max(6, (d.kcal / maxKcal) * 96) : 0;
+                    const isToday = d.iso === today();
+                    return (
+                      <View key={d.iso} style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                        <View style={{ width: "100%", height: h, borderRadius: 6, backgroundColor: isToday ? colors.green : colors.surface2, borderWidth: isToday || !d.count ? 0 : 1, borderColor: colors.line }} />
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
+                {days.map((d) => (
+                  <Body key={d.iso} size="micro" style={{ flex: 1, textAlign: "center" }}>{d.label}</Body>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <Body size="small" style={{ marginTop: 12 }}>Log a meal on the Food screen and the week fills in here.</Body>
+          )}
+        </Card>
+      ) : null}
 
       <LimeButton label="Ask a coach about your numbers" icon="logo-whatsapp" variant="outline" href={wa.general()} style={{ marginTop: 16 }} />
     </Screen>

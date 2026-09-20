@@ -11,7 +11,8 @@
     "primaryColor": "#C8FF1E",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "in.fitness7gym.app"
+      "bundleIdentifier": "in.fitness7gym.app",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "in.fitness7gym.app",

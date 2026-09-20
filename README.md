@@ -30,6 +30,102 @@ npm run app:ios      # iOS simulator (needs a Mac)
 Type-check everything: `npm run typecheck`
 Production build of the site: `npm run web:build`
 
+## Backend
+
+```
+app (Expo)  ──auth + own rows (RLS)──▶  Supabase (Postgres · Auth · no photos stored)
+     │                                        ▲
+     └──/api/* with the member's JWT──▶  web (Next.js on Render) ──secret key──┘
+                                              └──▶ Anthropic (Ask F7, food text, food photos)
+```
+
+- **Supabase** holds members, check-ins, weights, class follows, trek
+  reservations, food logs, leads. Schema + RLS: `supabase/schema.sql` (run once
+  in the SQL editor). Setup, phone OTP, Google/Apple: **`supabase/README.md`**.
+- **The app is offline-first.** Every write lands in local state and
+  AsyncStorage first, then in an outbox (`mobile/src/lib/outbox.ts`) that
+  replays to Supabase in the background and retries on reconnect. Kill the app
+  in airplane mode after a check-in and it is still there, and synced later.
+- **Local mode.** With no `EXPO_PUBLIC_SUPABASE_URL` the app behaves exactly
+  like the prototype (session on the phone). A session created in local mode
+  is migrated into the account on the first real sign-in.
+- **Site + API** deploy to Render from `render.yaml` (Blueprint). The secret
+  key lives only there. Leads from the enquiry form go to the `leads` table
+  (JSONL file fallback when no key is set).
+
+### Env vars
+
+| Where | Var | Notes |
+|---|---|---|
+| Render + `web/.env.local` | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | secret key (`sb_secret_…`) or legacy `SUPABASE_SERVICE_ROLE_KEY` |
+| | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | |
+| | `ANTHROPIC_API_KEY`, `ASSISTANT_MODEL` | assistant (optional) |
+| | `FOOD_TEXT_MODEL`, `FOOD_PHOTO_MODEL` | food logging (Phase 3) |
+| | `OWNER_PASSWORD` | `/owner` dashboard (Phase 4) |
+| | `WHATSAPP_*`, `NEXT_PUBLIC_SITE_URL` | as before |
+| `mobile/.env` | `EXPO_PUBLIC_API_URL` | the Render URL / fitness7gym.in |
+| | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | blank = local mode |
+| | `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | Google sign-in (optional) |
+
+### SMS provider
+
+Phone OTP needs an SMS provider in Supabase → Authentication → Providers →
+Phone. Until the owner picks one (`CONFIRM` in `shared/gym.ts`), add **test
+phone numbers with fixed codes** in that same screen and sign in with those —
+no SMS is sent. Details and the Twilio steps: `supabase/README.md` §2.
+
+### Deleting a member
+
+Settings → Privacy → Delete my data calls `DELETE /api/member/me`, which
+removes the auth user; every table cascades.
+
+### Food logging — how it works and what it costs
+
+```
+"2 idli, sambar, oru coffee" ──▶ shared/foods.ts (on the phone, instant, offline)
+                                   │ anything it can't match
+                                   ▼
+                       POST /api/food/parse ─▶ Claude Haiku 4.5 (tool-use, strict JSON, temp 0)
+photo (≤1024 px JPEG)  POST /api/food/photo ─▶ Claude Sonnet 4.5 (vision) — photo never stored
+```
+
+- `shared/foods.ts` — 311 Indian foods with per-100 g and per-portion
+  energy/macros, Tamil spellings, portion words ("rendu idli", "oru katori",
+  "half plate"), and 26 plate combos ("meals", "parotta salna") that expand
+  into their parts. Raw and simple foods use ICMR-NIN IFCT values; cooked
+  dishes are recipe estimates and are marked `estimate: true`. The app shows a
+  confidence pill on every line; nothing is a bare fact.
+  `npx tsx shared/scripts/parse.test.ts "3 idly with sambar" "…"` prints the table.
+- Prompts and JSON schemas: `web/src/server/food-prompts.ts`. They refuse diet
+  advice and hand off under-18 / pregnancy / eating-disorder / medical
+  mentions to a coach. `web/src/server/food.ts` re-checks every model number
+  (kcal must agree with the macros; names that hit the table take the table's
+  numbers).
+- Limits: 200 text / 20 photo per member per day (`api_usage`, atomic
+  counter). Tokens are logged there too; `/owner` shows the month's cost.
+- **Cost per 1,000 logs** (list prices, ₹84/$): text logs that reach the model
+  ≈ 1,100 in + 150 out tokens → about **₹150 per 1,000** (Haiku); most text
+  logs never reach the model. Photo logs ≈ 1,500 in + 300 out → about
+  **₹750 per 1,000** (Sonnet). At 100 members logging one photo and two text
+  meals a day: roughly ₹2,500–3,000 a month.
+- The daily target (`shared/nutrition.ts`) is Mifflin-St Jeor × activity ×
+  goal; the arithmetic is shown to the member under "How this is calculated".
+  Members can hide calories entirely in Settings → Training.
+
+### Owner dashboard
+
+`/owner` — set `OWNER_PASSWORD` (8+ characters) on Render. Today's check-ins,
+plans ending this week, trek reservations, the last 50 leads, and the food
+analyser's cost this month. Read-only; the secret key stays on the server; the
+cookie holds a signature, not the password.
+
+### Screenshots
+
+`web/screens/*.png` — Food, Type it, Snap it (fixture plate), Home, Settings,
+Progress at 390×844 in both themes, from `node web/scripts/screens.mjs` after
+`npx expo export --platform web` in `mobile/` (`EXPO_PUBLIC_ALLOW_FIXTURES=1`
+enables `/food/snap?fixture=1`).
+
 ## The hero
 
 `web/src/components/story/Hero.tsx` + `HeroMedia.tsx`. GSAP ScrollTrigger drives
@@ -135,9 +231,8 @@ want, their class. Enquiries land in the gym's normal WhatsApp inbox.
 alert for each form submission via the Cloud API. Leave them blank and
 everything still works.
 
-Form submissions are appended to `web/.data/leads.jsonl`. That is deliberate for
-the prototype — swap `appendLead` in `web/src/server/leads.ts` for a database
-insert when this goes live and nothing else has to change.
+Form submissions go to the Supabase `leads` table (`web/src/server/leads.ts`);
+without a Supabase key they append to `web/.data/leads.jsonl` as before.
 
 ## The app — screens and flow
 
@@ -147,7 +242,7 @@ tabs. Signed-in members never see the first three again.
 
 ```
 Welcome (1.4 s)  →  Login (+91 number · Google · Apple on iOS)
-                 →  Onboarding 1/3 name · 2/3 goal · 3/3 preferred slot
+                 →  Onboarding 1/4 name · 2/4 goal · 3/4 slot · 4/4 your numbers (skippable)
                  →  Tabs: Home · Classes · Treks · Plans · Profile
 ```
 
@@ -155,7 +250,7 @@ Welcome (1.4 s)  →  Login (+91 number · Google · Apple on iOS)
 | --- | --- | --- |
 | Welcome | `app/index.tsx` | Logo, tagline, gone in under two seconds. |
 | Login | `app/(auth)/login.tsx` | One field, one button, then Google/Apple. Three ways in, not seven (Hick). |
-| Onboarding | `app/onboarding/index.tsx` | Progress bar 1/3 → 3/3, one question per screen, Next disabled until answered. |
+| Onboarding | `app/onboarding/index.tsx` | Progress bar 1/4 → 4/4, one question per screen; step 4 (height, age, sex, activity) can be skipped. |
 | Home — empty | `app/(tabs)/index.tsx` | No plan: one green card (free trial), the popular plan as a text link, gym stats. |
 | Home — member | same file | Plan + renewal date, streak, treks done, slot, next trek at member price. |
 | Profile | `app/(tabs)/profile.tsx` | Initials, plan card, progress, goal/slot, help. Settings cog top-right. |
@@ -166,23 +261,26 @@ Welcome (1.4 s)  →  Login (+91 number · Google · Apple on iOS)
 | Ask F7 | `app/chat.tsx` | Same assistant as the site (see below). Chips for the common questions; "Human" opens WhatsApp. |
 | Visit | `app/visit.tsx` | Address, call, WhatsApp, hours, coaches, FAQ. |
 | Check in | `app/checkin.tsx` | Member code for the desk, one "I'm here" button, this week's strip, streak, bring-a-friend share. |
-| Progress | `app/progress.tsx` | Streak · last 30 days · all-time visits; body-weight log with a ten-bar chart (no chart library). |
+| Progress | `app/progress.tsx` | Streak · last 30 days · all-time visits; body-weight log with a ten-bar chart; 7-day food bars (no chart library). |
+| Food | `app/food/index.tsx` | Today ring (eaten / target), protein bar, meals by slot, Type it · Snap it · Recent. |
+| Type it | `app/food/add.tsx` | One box, live parse as you type, every line editable, one green "Add to lunch". |
+| Snap it | `app/food/snap.tsx` | Camera or gallery → resized on-device → Analyse → confidence pills → "Looks right — add". |
+| Recent | `app/food/recent.tsx` | Last 20 distinct items, tick and add. |
 
-**What a member can do now, without a backend:** check in (feeds a real
-weekly streak), log weight, follow classes (bell on each card → "Your classes"
-on Home), reserve a trek slot (held locally, confirmed at the desk), share a
-guest pass. A plan within 7 days of ending shows an amber renew banner on Home
-(the one amber thing in the app — Von Restorff). All of it lives in
-`src/state/session.tsx`; when Supabase lands, each of these becomes one table.
+**What a member can do, online or off:** check in (feeds a real weekly
+streak), log weight, follow classes (bell on each card → "Your classes" on
+Home), reserve a trek slot (held, confirmed at the desk), share a guest pass.
+A plan within 7 days of ending shows an amber renew banner on Home (the one
+amber thing in the app — Von Restorff). All of it lives in
+`src/state/session.tsx`, one Supabase table each, synced through the outbox.
 
 **Theme.** `src/theme/ThemeProvider.tsx` — light / dark / system, saved on the
 phone, on the same charcoal-and-green tokens as the website
 (`shared/palettes.ts`). Switch it in Settings → Appearance.
 
-**Session.** `src/state/session.tsx` — the member record lives on the phone
-(AsyncStorage) so the whole flow can be walked without a backend. To go live,
-replace `signIn` with Supabase auth and `member` with a row from the members
-table; every screen reads from this one hook, so nothing else changes.
+**Session.** `src/state/session.tsx` — the member record is cached on the phone
+(AsyncStorage) and backed by Supabase (see *Backend*). Every screen reads from
+this one hook; writes go local-first through the outbox.
 
 **Payment.** The confirm screen records the plan and hands off to UPI (deep
 link, once `contact.upi` is set in `shared/gym.ts`), the front desk, or a

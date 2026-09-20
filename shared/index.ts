@@ -4,3 +4,6 @@ export * from "./whatsapp";
 export * from "./format";
 export * from "./palettes";
 export * from "./assistant";
+export * from "./supabase-types";
+export * from "./nutrition";
+export * from "./foods";

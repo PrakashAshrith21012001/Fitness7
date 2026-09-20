@@ -17,6 +17,7 @@ import {
   plans,
 } from "@f7/content";
 import { WeekStrip } from "@/components/WeekStrip";
+import { TodayTile } from "@/components/TodayTile";
 import { today } from "@/state/session";
 import { radius } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
@@ -206,6 +207,9 @@ export default function Home() {
               </View>
             </Card>
           </Pressable>
+
+          {/* Today — food, compact; opens the Food screen */}
+          <TodayTile />
 
           <Card>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>

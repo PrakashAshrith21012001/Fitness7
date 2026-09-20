@@ -228,6 +228,10 @@
   /* The scrolled nav bar. Nearly opaque on purpose: the story scrolls colour
      bands underneath it, and at 72% the summit's green pushed page text
      through the bar and into the links. Blur is the finish, not the barrier. */
+  /* The classes rail scrolls; the bar under it already reports position. */
+  .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
   .glass {
     background: color-mix(in srgb, var(--color-surface) 94%, transparent);
     backdrop-filter: blur(16px) saturate(140%);

@@ -7,8 +7,13 @@ import { contact, wa, telLink } from "@f7/content";
 import { radius, type } from "@/theme";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { useSession, prettyPhone, type Goal, type Slot } from "@/state/session";
-import { Body } from "@/components/ui";
+import { isConfigured } from "@/lib/supabase";
+import { api } from "@/lib/api";
+import { Body, Display } from "@/components/ui";
 import { Group, Row, Screen } from "@/components/Screen";
+import { Chips, Segmented } from "@/components/Pickers";
+import { NumbersForm, type Numbers } from "@/components/NumbersForm";
+import { TargetCard } from "@/components/TargetCard";
 
 const goals: { id: Goal; label: string }[] = [
   { id: "strength", label: "Get stronger" },
@@ -23,100 +28,6 @@ const slots: { id: Slot; label: string }[] = [
   { id: "evening", label: "Evening · 4–10 PM" },
 ];
 
-function Segmented<T extends string>({
-  value,
-  options,
-  onChange,
-}: {
-  value: T;
-  options: { id: T; label: string }[];
-  onChange: (v: T) => void;
-}) {
-  const colors = useColors();
-  return (
-    <View
-      style={{
-        flexDirection: "row",
-        backgroundColor: colors.surface2,
-        borderRadius: radius.pill,
-        padding: 4,
-        gap: 4,
-      }}
-    >
-      {options.map((o) => {
-        const on = o.id === value;
-        return (
-          <Pressable
-            key={o.id}
-            onPress={() => {
-              Haptics.selectionAsync().catch(() => {});
-              onChange(o.id);
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-            style={{
-              flex: 1,
-              minHeight: 40,
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: radius.pill,
-              backgroundColor: on ? colors.green : "transparent",
-            }}
-          >
-            <Body size="small" style={{ fontWeight: "700", color: on ? colors.onAccent : colors.white }}>
-              {o.label}
-            </Body>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-/** Wrapping chips for lists whose labels don't fit a segmented bar. */
-function Chips<T extends string>({
-  value,
-  options,
-  onChange,
-}: {
-  value: T;
-  options: { id: T; label: string }[];
-  onChange: (v: T) => void;
-}) {
-  const colors = useColors();
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-      {options.map((o) => {
-        const on = o.id === value;
-        return (
-          <Pressable
-            key={o.id}
-            onPress={() => {
-              Haptics.selectionAsync().catch(() => {});
-              onChange(o.id);
-            }}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: on }}
-            style={{
-              minHeight: 40,
-              paddingHorizontal: 16,
-              justifyContent: "center",
-              borderRadius: radius.pill,
-              borderWidth: 1,
-              borderColor: on ? colors.green : colors.line,
-              backgroundColor: on ? colors.green : colors.surface2,
-            }}
-          >
-            <Body size="small" style={{ fontWeight: "600", color: on ? colors.onAccent : colors.white }}>
-              {o.label}
-            </Body>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 /**
  * Settings, grouped the way the platform groups them: Profile · Training ·
  * Notifications · Appearance · Support · Account. Destructive action last,
@@ -129,10 +40,19 @@ export default function Settings() {
   const { pref, setTheme } = useTheme();
   const { member, update, signOut } = useSession();
   const [name, setName] = useState(member?.name ?? "");
+  const [numbers, setNumbers] = useState<Numbers>({
+    heightCm: member?.heightCm, age: member?.age, sex: member?.sex, activity: member?.activity,
+  });
   useEffect(() => {
     if (member?.name) setName(member.name);
   }, [member?.name]);
   if (!member) return null;
+
+  const saveNumbers = (n: Numbers) => {
+    setNumbers(n);
+    const changed = n.heightCm !== member.heightCm || n.age !== member.age || n.sex !== member.sex || n.activity !== member.activity;
+    if (changed) update({ heightCm: n.heightCm, age: n.age, sex: n.sex, activity: n.activity });
+  };
 
   const toggle = (key: keyof typeof member.notifications) => (v: boolean) => {
     Haptics.selectionAsync().catch(() => {});
@@ -206,6 +126,20 @@ export default function Settings() {
             <Chips value={member.slot ?? "evening"} options={slots} onChange={(slot) => update({ slot })} />
           </View>
         </View>
+        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.line }}>
+          <Display size="h2" style={{ textTransform: "none", letterSpacing: -0.3 }}>Your numbers</Display>
+          <Body size="small" style={{ marginTop: 4, marginBottom: 16 }}>For the daily energy and protein target on the Food screen. Weight comes from Progress.</Body>
+          <NumbersForm value={numbers} onChange={saveNumbers} />
+          <View style={{ marginTop: 16 }}>
+            <TargetCard />
+          </View>
+        </View>
+        <Row
+          icon="eye-off-outline"
+          label="Hide calories"
+          value="Food still logs; the numbers stay out of sight"
+          right={sw(!!member.hideCalories, (v) => update({ hideCalories: v }), "Hide calories")}
+        />
       </Group>
 
       <Group title="Notifications">
@@ -259,18 +193,25 @@ export default function Settings() {
           first
           icon="shield-checkmark-outline"
           label="Your data"
-          value="Stored on this phone only. Nothing is shared or sold."
+          value={isConfigured ? "Kept in your Fitness 7 account and on this phone. Nothing is shared or sold." : "Stored on this phone only. Nothing is shared or sold."}
         />
         <Row
           icon="trash-outline"
           label="Delete my data"
-          value="Removes your profile from this phone"
+          value={isConfigured ? "Removes your account and everything in it" : "Removes your profile from this phone"}
           onPress={() => {
-            const go = () => signOut().then(() => router.replace("/"));
-            if (Platform.OS === "web") return go();
-            Alert.alert("Delete your data?", "Your profile and preferences on this phone will be removed.", [
+            const go = async () => {
+              if (isConfigured && !member.id.startsWith("local-")) {
+                // Best effort: if the site is unreachable the sign-out still happens; support can finish the delete.
+                await api("/api/member/me", { method: "DELETE" }).catch(() => {});
+              }
+              await signOut();
+              router.replace("/");
+            };
+            if (Platform.OS === "web") return void go();
+            Alert.alert("Delete your data?", isConfigured ? "Your account, check-ins, weights and food log will be deleted. This can't be undone." : "Your profile and preferences on this phone will be removed.", [
               { text: "Cancel", style: "cancel" },
-              { text: "Delete", style: "destructive", onPress: go },
+              { text: "Delete", style: "destructive", onPress: () => void go() },
             ]);
           }}
         />

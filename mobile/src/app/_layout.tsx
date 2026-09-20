@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { SessionProvider, useSession } from "@/state/session";
+import { FoodProvider } from "@/state/food";
 
 /**
  * Route gate. Jakob's law: the app behaves like every app people already use —
@@ -54,6 +55,10 @@ function Gate() {
         <Stack.Screen name="progress" options={{ animation: "slide_from_right" }} />
         <Stack.Screen name="upgrade/[plan]" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="upgrade/success" options={{ animation: "fade" }} />
+        <Stack.Screen name="food/index" options={{ animation: "slide_from_right" }} />
+        <Stack.Screen name="food/add" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+        <Stack.Screen name="food/snap" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+        <Stack.Screen name="food/recent" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
       </Stack>
     </>
   );
@@ -64,7 +69,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <SessionProvider>
-          <Gate />
+          <FoodProvider>
+            <Gate />
+          </FoodProvider>
         </SessionProvider>
       </ThemeProvider>
     </SafeAreaProvider>

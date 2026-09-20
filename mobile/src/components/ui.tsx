@@ -46,15 +46,17 @@ export function Body({
   style,
   muted = true,
   size = "body",
+  numberOfLines,
 }: {
   children: ReactNode;
   style?: StyleProp<TextStyle>;
   muted?: boolean;
   size?: "body" | "small" | "micro" | "title";
+  numberOfLines?: number;
 }) {
   const colors = useColors();
   return (
-    <Text style={[{ color: muted ? colors.muted : colors.white }, type[size], style]}>
+    <Text style={[{ color: muted ? colors.muted : colors.white }, type[size], style]} numberOfLines={numberOfLines}>
       {children}
     </Text>
   );

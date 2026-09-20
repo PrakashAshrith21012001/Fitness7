@@ -25,8 +25,10 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
  */
 
 const FRAME_DIR = "/hero/frames";
-/** First frame of the walkthrough, so still and sequence are the same shot */
 const STILL = "/hero/poster.jpg";
+/** Same room, framed tall — on a phone the wide crop puts the turf under the
+ *  body copy, and pale green under text is unreadable. */
+const STILL_PORTRAIT = "/hero/poster-portrait.jpg";
 const STILL_BLUR = "/hero/poster-blur.jpg";
 
 type Mode = "still" | "sequence";
@@ -171,18 +173,21 @@ export function HeroMedia({ sectionRef }: { sectionRef: React.RefObject<HTMLElem
       />
 
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <picture>
+        <source media="(max-width: 700px)" srcSet={STILL_PORTRAIT} />
+        <img
         ref={still}
         src={STILL}
         alt=""
-        width={1152}
-        height={648}
+        width={1920}
+        height={1080}
         fetchPriority="high"
         decoding="async"
         className={`absolute inset-0 size-full object-cover object-center transition-opacity duration-700 ${
           mode === "sequence" && ready ? "opacity-0" : "opacity-100"
         }`}
-      />
+        />
+      </picture>
 
       <canvas
         ref={canvas}
