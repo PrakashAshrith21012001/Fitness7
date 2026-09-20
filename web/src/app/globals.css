@@ -135,8 +135,14 @@
   /* Black-background product loops disappear into a dark canvas with screen
      blending; on light they are ghosted rather than shown as a black slab. */
   .chapter-media { mix-blend-mode: screen; opacity: 0.9; }
-  /* A black-plate product loop has no honest reading on cream; it goes. */
-  :root[data-theme="light"] .chapter-media { display: none; }
+  /* On cream the clip can't blend away — it is shown straight, as a soft dark
+     plate whose radial mask dissolves into the page, the way a product shot
+     sits on its own ground. */
+  :root[data-theme="light"] .chapter-media {
+    mix-blend-mode: normal;
+    opacity: 0.95;
+    filter: contrast(1.04) saturate(1.05);
+  }
 
   /* Band colour laid over the ascent footage so the climb's colour flips stay
      legible on top of real sky. Heavier in light, where the footage is dark. */
@@ -219,10 +225,14 @@
     }
   }
 
+  /* The scrolled nav bar. Nearly opaque on purpose: the story scrolls colour
+     bands underneath it, and at 72% the summit's green pushed page text
+     through the bar and into the links. Blur is the finish, not the barrier. */
   .glass {
-    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 10px 30px -22px rgb(0 0 0 / 0.55);
   }
 
   .shimmer-btn {

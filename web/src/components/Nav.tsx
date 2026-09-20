@@ -31,12 +31,17 @@ export function Nav() {
       <header
         className={cn(
           "fixed inset-x-0 top-0 z-50 transition-all duration-500",
-          scrolled ? "glass border-b border-line py-3" : "py-5",
+          scrolled ? "glass border-b border-line py-2.5" : "py-5",
         )}
       >
         <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 sm:px-8">
           <a href="#top" className="flex items-center" aria-label={brand.fullName}>
-            <Logo className="h-11 sm:h-14" />
+            <Logo
+              className={cn(
+                "transition-[height] duration-500",
+                scrolled ? "h-9 sm:h-10" : "h-11 sm:h-14",
+              )}
+            />
           </a>
 
           <ul className="hidden items-center gap-9 lg:flex">
@@ -56,7 +61,7 @@ export function Nav() {
             <ThemeToggle className="hidden sm:grid" />
             <a
               href={telLink()}
-              className="hidden grid size-11 place-items-center rounded-full border border-line text-white/70 transition-colors hover:border-lime hover:text-lime sm:block"
+              className="hidden size-11 place-items-center rounded-full border border-line text-white/70 transition-colors hover:border-lime hover:text-lime sm:grid"
               aria-label="Call the gym"
             >
               <Phone className="size-4" strokeWidth={1.8} />
