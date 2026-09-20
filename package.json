@@ -1,0 +1,15 @@
+{
+  "name": "fitness7gym",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Fitness 7 Gym Unisex — website, Android & iOS app",
+  "workspaces": ["shared", "web", "mobile"],
+  "scripts": {
+    "web": "npm run dev --workspace=web",
+    "web:build": "npm run build --workspace=web",
+    "app": "npm run start --workspace=mobile",
+    "app:android": "npm run android --workspace=mobile",
+    "app:ios": "npm run ios --workspace=mobile",
+    "typecheck": "npm run typecheck --workspace=web && npm run typecheck --workspace=mobile"
+  }
+}

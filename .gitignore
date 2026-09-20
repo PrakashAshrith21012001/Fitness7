@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+.expo/
+web/.data/
+*.log
+.env
+.env.local
+.DS_Store
+web/next-env.d.ts
+mobile/expo-env.d.ts
+.staging/

@@ -1,0 +1,48 @@
+# Render Blueprint — deploys the website + its API routes (web/) as one Node service.
+# Render Dashboard → New → Blueprint → connect this repo → Deploy Blueprint.
+# Everything below is created automatically; only the secrets marked `sync: false`
+# are typed in by hand on the creation screen.
+services:
+  - type: web
+    name: fitness7-web
+    runtime: node
+    region: singapore          # closest Render region to Tamil Nadu
+    plan: free                 # free sleeps after 15 min idle (~30 s cold start). "starter" = $7/mo, always warm.
+    # Build runs at the repo root because this is an npm-workspaces monorepo.
+    # `npm ci` installs every workspace (including mobile) — that is how npm ci
+    # works with a shared lockfile, so the first build takes ~5 minutes.
+    buildCommand: npm ci && npm run build --workspace=web
+    startCommand: npm run start --workspace=web
+    healthCheckPath: /
+    autoDeployTrigger: commit  # every push to main redeploys
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://fitness7gym.in
+      - key: ASSISTANT_MODEL
+        value: claude-haiku-4-5-20251001
+
+      # ---- Secrets: Render asks for these on the Blueprint creation screen ----
+      # Anthropic console → API keys
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+      # Supabase → Settings → API Keys  (new-style keys; the old anon /
+      # service_role keys are deprecated at the end of 2026)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY          # sb_secret_...  server only, never in the app
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY   # sb_publishable_...  safe in the browser
+        sync: false
+
+      # WhatsApp Cloud API — optional; leave blank and wa.me links still work
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_ID
+        sync: false
+      - key: WHATSAPP_OWNER_NUMBER
+        sync: false

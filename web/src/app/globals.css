@@ -1,0 +1,291 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* Colour — generated from shared/palettes.ts. Light is FirstGrade's    */
+/* cream set; dark is a green-black charcoal from the gym's own black-  */
+/* and-lime creative. Theme on <html data-theme>; the climb's altitude  */
+/* bands re-map every token inside a section that sets data-band.      */
+/* ------------------------------------------------------------------ */
+/* Theme × band. Theme lives on <html data-theme>, band on the story wrapper. */
+:root, :root[data-theme="dark"] {
+  --ridge-near: #0b0e0c; --ridge-far: #2a302c;
+  --p-bg: #111412; --p-surface: #181c19; --p-surface-2: #1f2420; --p-line: #2a302c;
+  --p-fg: #eef2ef; --p-muted: #98a39b;
+  --p-accent: #2ecc71; --p-green: #2ecc71; --p-accent-deep: #27ae60; --p-on-accent: #0a0f0d;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --ridge-near: #cfcbc0; --ridge-far: #e6e3da;
+  --p-bg: #faf9f6; --p-surface: #fffefc; --p-surface-2: #f3f1ec; --p-line: #e9e6df;
+  --p-fg: #0a0f0d; --p-muted: #4b5563;
+  --p-accent: #15803d; --p-green: #2ecc71; --p-accent-deep: #27ae60; --p-on-accent: #0a0f0d;
+  color-scheme: light;
+}
+:root [data-band="mist"], :root[data-theme="dark"] [data-band="mist"] {
+  --ridge-near: #141816; --ridge-far: #3a423c;
+  --p-bg: #1c211d; --p-surface: #242a25; --p-surface-2: #2c332e; --p-line: #3a423c;
+  --p-fg: #eef2ef; --p-muted: #a6b0a8;
+  --p-accent: #4ade80; --p-green: #2ecc71; --p-accent-deep: #27ae60; --p-on-accent: #0a0f0d;
+  color-scheme: dark;
+}
+:root[data-theme="light"] [data-band="mist"] {
+  --ridge-near: #bdb8ac; --ridge-far: #d9d5cb;
+  --p-bg: #eae7e0; --p-surface: #f3f1ec; --p-surface-2: #fffefc; --p-line: #d6d2c8;
+  --p-fg: #0a0f0d; --p-muted: #4b5563;
+  --p-accent: #15803d; --p-green: #2ecc71; --p-accent-deep: #27ae60; --p-on-accent: #0a0f0d;
+  color-scheme: light;
+}
+[data-band="summit"] {
+  --ridge-near: #0f4c3a; --ridge-far: #1f9e57;
+  --p-bg: #2ecc71; --p-surface: #3bd47d; --p-surface-2: #4fda8c; --p-line: #1f9e57;
+  --p-fg: #0a0f0d; --p-muted: #0f4c3a;
+  --p-accent: #0a0f0d; --p-green: #0a0f0d; --p-accent-deep: #000000; --p-on-accent: #fafaf7;
+  color-scheme: light;
+}
+:root, :root[data-theme="dark"] { --wash-hero: linear-gradient(160deg, #15201a 0%, #111412 60%); }
+:root[data-theme="light"] { --wash-hero: linear-gradient(160deg, #f0fdf4 0%, #fffefc 60%); }
+
+/* Semantic tokens. `ink` is the canvas, `white` the foreground and
+   `lime` the accent — the names stay stable while the palette changes,
+   so components never hard-code a colour. */
+@theme inline {
+  --color-ink: var(--p-bg);
+  --color-surface: var(--p-surface);
+  --color-surface-2: var(--p-surface-2);
+  --color-line: var(--p-line);
+  --color-muted: var(--p-muted);
+  --color-white: var(--p-fg);
+  --color-lime: var(--p-accent);
+  --color-green: var(--p-green);
+  --color-lime-deep: var(--p-accent-deep);
+  --color-on-accent: var(--p-on-accent);
+  --color-rim: var(--p-rim);
+}
+
+@theme {
+  --font-display: "Fraunces Variable", "Fraunces", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* FirstGrade radii */
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-shimmer: shimmer 2.6s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes pulse-ring {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 0.08; transform: scale(1.35); }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background: var(--color-ink);
+    color: var(--color-white);
+    transition: background-color 0.5s ease, color 0.5s ease;
+    font-family: var(--font-sans);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-on-accent);
+  }
+
+  /* Lime scrollbar, desktop only */
+  @media (pointer: fine) {
+    ::-webkit-scrollbar { width: 10px; }
+    ::-webkit-scrollbar-track { background: var(--color-ink); }
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-line);
+      border-radius: 999px;
+      border: 2px solid var(--color-ink);
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--color-lime-deep); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Black-background product loops disappear into a dark canvas with screen
+     blending; on light they are ghosted rather than shown as a black slab. */
+  .chapter-media { mix-blend-mode: screen; opacity: 0.9; }
+  /* A black-plate product loop has no honest reading on cream; it goes. */
+  :root[data-theme="light"] .chapter-media { display: none; }
+
+  /* Band colour laid over the ascent footage so the climb's colour flips stay
+     legible on top of real sky. Heavier in light, where the footage is dark. */
+  .story-wash {
+    background: color-mix(in srgb, var(--p-bg) 48%, transparent);
+  }
+  :root[data-theme="light"] .story-wash {
+    background: color-mix(in srgb, var(--p-bg) 70%, transparent);
+  }
+
+  /* Light theme reads the floor as a ghosted plate behind FirstGrade's cream
+     wash, rather than a dark photo fighting a light scrim into mud. */
+  :root[data-theme="light"] .hero-media {
+    opacity: 0.38;
+    filter: saturate(0.85) contrast(1.05);
+  }
+
+  .story-fade,
+  .story-fade * {
+    transition-property: background-color, color, border-color, fill, stroke;
+    transition-duration: 600ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* FirstGrade headline voice: Fraunces 700, tight, sentence case, optical size maxed */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+    font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
+    text-transform: none;
+  }
+
+  /* FirstGrade button: pill, 800, green glow */
+  .btn-green {
+    background: var(--color-green);
+    color: var(--color-on-accent);
+    font-weight: 800;
+    border-radius: 50px;
+    box-shadow: 0 4px 14px rgba(46, 204, 113, 0.4);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .btn-green:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(46, 204, 113, 0.5); }
+  .btn-green:active { transform: translateY(0) scale(0.98); }
+
+  /* Outlined display words — the "AROMA / UMAMI" treatment from the reference */
+  .display-outline {
+    -webkit-text-stroke: 2px color-mix(in srgb, var(--color-white) 80%, transparent);
+    color: transparent;
+    paint-order: stroke fill;
+  }
+  @media (min-width: 1024px) {
+    .display-outline { -webkit-text-stroke-width: 2px; }
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-lime);
+  }
+
+  /* The frosted panel. One per page. */
+  .glass-panel {
+    background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid color-mix(in srgb, var(--color-white) 12%, transparent);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--color-white) 15%, transparent),
+      0 24px 70px -30px rgb(0 0 0 / 0.9);
+  }
+  /* Safari <18 and Firefox with backdrop-filter off get an opaque panel
+     rather than unreadable text over moving footage. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass-panel {
+      background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+    }
+  }
+
+  .glass {
+    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
+
+  .shimmer-btn {
+    background-image: linear-gradient(
+      110deg,
+      var(--color-green) 0%, var(--color-green) 40%,
+      color-mix(in srgb, white 45%, var(--color-green)) 50%,
+      var(--color-green) 60%, var(--color-green) 100%
+    );
+    box-shadow: 0 4px 14px rgba(46, 204, 113, 0.4);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  @property --beam-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+  }
+  .border-beam {
+    position: relative;
+  }
+  .border-beam::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--beam-angle),
+      transparent 0deg,
+      transparent 300deg,
+      var(--color-lime) 330deg,
+      color-mix(in srgb, var(--color-white) 70%, var(--color-lime)) 345deg,
+      transparent 360deg
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: beam 5s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes beam {
+    to { --beam-angle: 360deg; }
+  }
+
+  .dot-grid {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-white) 14%, transparent) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  .lime-glow {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-lime) 40%, transparent),
+                0 12px 48px -12px color-mix(in srgb, var(--color-lime) 55%, transparent);
+  }
+
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}

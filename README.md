@@ -1,0 +1,219 @@
+# Fitness 7 Gym Unisex
+
+Website + Android/iOS app for Fitness 7 Gym Unisex, Dharmapuri.
+
+```
+fitness7gym/
+├── shared/    one content file both apps read — classes, trainers, plans, treks, contact
+├── web/       Next.js 16 site with the 3D hero
+└── mobile/    Expo app — one codebase, Android and iOS
+```
+
+## Run it
+
+Install once, from this folder (npm workspaces — do **not** run install inside
+`web/` or `mobile/`):
+
+```bash
+npm install
+```
+
+Then:
+
+```bash
+npm run web          # site at http://localhost:3000
+npm run app          # Expo — scan the QR with Expo Go on your phone
+npm run app:android  # Android emulator / connected device
+npm run app:ios      # iOS simulator (needs a Mac)
+```
+
+Type-check everything: `npm run typecheck`
+Production build of the site: `npm run web:build`
+
+## The hero
+
+`web/src/components/story/Hero.tsx` + `HeroMedia.tsx`. GSAP ScrollTrigger drives
+one timeline: the headline rises out of per-word masks, the glass panel and CTAs
+follow, and the whole copy layer lifts and fades as the floor keeps moving behind
+it. Everything non-essential is inside `gsap.matchMedia()` — reduced-motion
+visitors get the final state immediately and a still frame.
+
+**The walkthrough is in.** `web/public/hero/frames/` holds 80 frames cut from the Flow clip; the hero scrubs them. To replace them, regenerate with recipe 4 in the prompt pack and update `manifest.json`.
+
+**How the media plane works.** The media plane runs in one of two modes
+and picks at runtime:
+
+- **still** (what runs today) — the gym's own wide floor photo with a slow
+  scroll-driven push.
+- **sequence** — drop JPEGs at `web/public/hero/frames/0001.jpg…` plus a
+  `manifest.json` containing `{"count": 150}`, and it switches itself on. No code
+  change.
+
+It is a `<canvas>` frame sequence on purpose, not a `<video>` scrubbed through
+`currentTime`. iOS Safari will not seek a video smoothly under scroll, so the
+video approach looks perfect on a desktop and falls apart on most real traffic.
+Generate the frames with recipe 4 in the ffmpeg section of the prompt pack.
+
+Budget: keep the frame folder under 4MB. If it will not fit, cut the frame
+count, not the resolution.
+
+## Colour and type — FirstGrade's system, light and dark
+
+Light is FirstGrade's cream set, read from its live stylesheet. Dark is **not**
+FirstGrade's navy — it is a green-black charcoal taken from the gym's own
+black-and-lime creative, with a hair of green in the greys so the accent sits in:
+
+- **Type:** Fraunces 700 for headlines (tight, sentence case, optical size 144),
+  Plus Jakarta Sans for everything else. Self-hosted from npm.
+- **Buttons:** `.btn-green` — pill, weight 800, `0 4px 14px rgba(46,204,113,.4)` glow.
+  Text on the green is ink, not white: white-on-#2ecc71 measures 2.1:1 and fails AA.
+- **Theme:** `html[data-theme="dark|light"]`. A boot script in `layout.tsx` applies
+  the saved choice (or the OS preference) before first paint. Toggle in the nav.
+- **Bands:** the page is still a climb through three altitude bands; each band
+  has a light and a dark reading in `shared/palettes.ts`. The summit is the same
+  in both — full FirstGrade green, ink text.
+
+| | dark | light |
+|---|---|---|
+| canvas | `#111412` | `#faf9f6` |
+| card | `#181c19` | `#fffefc` |
+| border | `#2a302c` | `#e9e6df` |
+| text | `#eef2ef` | `#0a0f0d` |
+| accent (text) | `#2ecc71` | `#15803d` |
+| accent (fill) | `#2ecc71` | `#2ecc71` |
+
+`text-lime` is the *readable* accent for the current canvas; `bg-green` / `.btn-green`
+is always the vivid brand fill. Do not use `text-green` for copy on light.
+
+**Logo:** `web/public/brand/logo-{dark,light}[@2x].png`, cut from the gym's own
+creative. The logo's green is its own (`#8cba3d`) and is deliberately not
+re-tinted to the UI green.
+
+## Design system
+
+`.claude/skills/ui-ux-pro-max/` is the UI/UX Pro Max skill, installed for
+Claude Code. `design-system/fitness-7/MASTER.md` is its generated design
+system for this project — read it before adding pages.
+
+## Changing the content
+
+Everything the owner needs to confirm lives in **`shared/gym.ts`**, marked
+`CONFIRM`. Change it once and both the site and the app update:
+
+| What | Where |
+|---|---|
+| Phone, WhatsApp, address, maps link | `contact` |
+| Opening hours | `hours` |
+| Classes and timings | `classes` |
+| Trainers | `trainers` |
+| Membership prices | `plans` |
+| Monthly treks, dates, slots | `treks` |
+| FAQ, testimonials, facilities | further down the file |
+
+Brand colours are in `shared/brand.ts` — black `#05060A`, white, lime `#C8FF1E`,
+taken from the gym's own Instagram creative.
+
+### Photos
+
+The prototype draws placeholder art instead of shipping stock photos. Once the
+owner sends real images, drop them in and the filenames already referenced will
+pick them up:
+
+- `web/public/trainers/` — `arun.jpg`, `divya.jpg`, `vignesh.jpg`, `priya.jpg`
+- `web/public/treks/` — `yercaud.jpg`, `kolli-hills.jpg`, `sitheri.jpg`, `kotagiri.jpg`
+- `web/public/gallery/` — `floor-01.jpg` … `floor-06.jpg`
+
+## WhatsApp
+
+**Working now, no setup:** every button on the site and in the app opens
+WhatsApp with the message already written — the plan they tapped, the trek they
+want, their class. Enquiries land in the gym's normal WhatsApp inbox.
+
+**Optional upgrade:** the contact form also posts to `/api/enquiry`. Fill in
+`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` and `WHATSAPP_OWNER_NUMBER` in
+`web/.env.local` (copy `web/.env.example`) and the gym gets an instant WhatsApp
+alert for each form submission via the Cloud API. Leave them blank and
+everything still works.
+
+Form submissions are appended to `web/.data/leads.jsonl`. That is deliberate for
+the prototype — swap `appendLead` in `web/src/server/leads.ts` for a database
+insert when this goes live and nothing else has to change.
+
+## The app — screens and flow
+
+The app follows the pattern people already know from every membership app
+(Jakob's law): a welcome flash, a sign-in, three quick questions, then the
+tabs. Signed-in members never see the first three again.
+
+```
+Welcome (1.4 s)  →  Login (+91 number · Google · Apple on iOS)
+                 →  Onboarding 1/3 name · 2/3 goal · 3/3 preferred slot
+                 →  Tabs: Home · Classes · Treks · Plans · Profile
+```
+
+| Screen | File | What matters |
+| --- | --- | --- |
+| Welcome | `app/index.tsx` | Logo, tagline, gone in under two seconds. |
+| Login | `app/(auth)/login.tsx` | One field, one button, then Google/Apple. Three ways in, not seven (Hick). |
+| Onboarding | `app/onboarding/index.tsx` | Progress bar 1/3 → 3/3, one question per screen, Next disabled until answered. |
+| Home — empty | `app/(tabs)/index.tsx` | No plan: one green card (free trial), the popular plan as a text link, gym stats. |
+| Home — member | same file | Plan + renewal date, streak, treks done, slot, next trek at member price. |
+| Profile | `app/(tabs)/profile.tsx` | Initials, plan card, progress, goal/slot, help. Settings cog top-right. |
+| Settings | `app/settings.tsx` | Grouped: Profile · Training · Notifications · Appearance · Support · Privacy · Sign out (red, last, alone — Von Restorff). |
+| Plans | `app/(tabs)/membership.tsx` | Popular plan highlighted with a filled button; others outlined. Current plan marked. |
+| Confirm plan | `app/upgrade/[plan].tsx` | What you get, how you pay (UPI / desk / WhatsApp), total, one button. |
+| Welcome / success | `app/upgrade/success.tsx` | Big tick, first name, what happens next, "Go to my gym". |
+| Ask F7 | `app/chat.tsx` | Same assistant as the site (see below). Chips for the common questions; "Human" opens WhatsApp. |
+| Visit | `app/visit.tsx` | Address, call, WhatsApp, hours, coaches, FAQ. |
+| Check in | `app/checkin.tsx` | Member code for the desk, one "I'm here" button, this week's strip, streak, bring-a-friend share. |
+| Progress | `app/progress.tsx` | Streak · last 30 days · all-time visits; body-weight log with a ten-bar chart (no chart library). |
+
+**What a member can do now, without a backend:** check in (feeds a real
+weekly streak), log weight, follow classes (bell on each card → "Your classes"
+on Home), reserve a trek slot (held locally, confirmed at the desk), share a
+guest pass. A plan within 7 days of ending shows an amber renew banner on Home
+(the one amber thing in the app — Von Restorff). All of it lives in
+`src/state/session.tsx`; when Supabase lands, each of these becomes one table.
+
+**Theme.** `src/theme/ThemeProvider.tsx` — light / dark / system, saved on the
+phone, on the same charcoal-and-green tokens as the website
+(`shared/palettes.ts`). Switch it in Settings → Appearance.
+
+**Session.** `src/state/session.tsx` — the member record lives on the phone
+(AsyncStorage) so the whole flow can be walked without a backend. To go live,
+replace `signIn` with Supabase auth and `member` with a row from the members
+table; every screen reads from this one hook, so nothing else changes.
+
+**Payment.** The confirm screen records the plan and hands off to UPI (deep
+link, once `contact.upi` is set in `shared/gym.ts`), the front desk, or a
+WhatsApp payment link. Razorpay drops into `confirm()` in `upgrade/[plan].tsx`
+later without touching the screens around it.
+
+**Assistant.** `shared/assistant.ts` is used by both the site (`/api/chat`) and
+the app. On the phone the common questions are answered on-device — instant,
+offline. Set `EXPO_PUBLIC_API_URL` (copy `mobile/.env.example`) to the deployed
+site and free-text questions go through the site's API, which adds Claude on
+top of the same facts when `ANTHROPIC_API_KEY` is set there.
+
+## Shipping the app
+
+The app is Expo, so one codebase builds both stores:
+
+```bash
+npx eas build --platform android
+npx eas build --platform ios     # needs an Apple Developer account
+```
+
+Bundle ID / package name is `in.fitness7gym.app` — change it in `mobile/app.json`
+before the first store submission if you want something different.
+
+## Notes
+
+- The 3D is hand-built geometry — layered sine ridgelines and a soft cloud layer — not a downloaded model, so it loads fast and works offline. It does not render for visitors with reduced motion on, or on very low-memory devices; they get the same page with a still gradient.
+- The one glass panel is `.glass-panel` in `globals.css`, with an `@supports` fallback to an opaque surface where `backdrop-filter` is unavailable. There is deliberately only one — glass on every card reads cheap and wrecks contrast over moving media.
+- Contrast was measured on rendered pixels, not computed from CSS: five of six sampled text blocks clear 4.5:1 by a wide margin, and the sixth was taken to full strength rather than estimated.
+- The 3D hero is hand-built geometry, not a downloaded model, so it loads fast
+  and works offline. It does not render for visitors who have "reduce motion"
+  on, or on very low-memory devices — they get the same layout without it.
+- Dates and prices are formatted by hand rather than through `Intl`, so the
+  server and browser can never disagree and cause a hydration mismatch.
