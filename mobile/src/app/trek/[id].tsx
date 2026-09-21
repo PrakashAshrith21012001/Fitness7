@@ -1,7 +1,8 @@
 import { ScrollView, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { treks, inr, longDate, shortDate, daysUntil, groupIndian, wa } from "@f7/content";
+import { inr, longDate, shortDate, daysUntil, groupIndian, wa } from "@f7/content";
+import { useContent } from "@/state/content";
 import { radius } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { useSession } from "@/state/session";
@@ -14,7 +15,8 @@ const tone = { Easy: "lime", Moderate: "amber", Challenging: "red" } as const;
 export default function TrekDetail() {
   const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const trek = treks.find((t) => t.id === id);
+  const { byId } = useContent();
+  const trek = byId(String(id));
   const { member, toggleReserve } = useSession();
   const reserved = !!(trek && member?.reserved.includes(trek.id));
 

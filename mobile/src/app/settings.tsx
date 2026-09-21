@@ -14,6 +14,8 @@ import { Group, Row, Screen } from "@/components/Screen";
 import { Chips, Segmented } from "@/components/Pickers";
 import { NumbersForm, type Numbers } from "@/components/NumbersForm";
 import { TargetCard } from "@/components/TargetCard";
+import { WaterGoalRow } from "@/components/WaterGoalRow";
+import { ensurePermission } from "@/lib/reminders";
 
 const goals: { id: Goal; label: string }[] = [
   { id: "strength", label: "Get stronger" },
@@ -134,6 +136,7 @@ export default function Settings() {
             <TargetCard />
           </View>
         </View>
+        <WaterGoalRow />
         <Row
           icon="eye-off-outline"
           label="Hide calories"
@@ -145,6 +148,18 @@ export default function Settings() {
       <Group title="Notifications">
         <Row
           first
+          icon="restaurant-outline"
+          label="Meal reminders"
+          value="Only when a meal hasn't been logged — 9:30, 1:30, 9 pm"
+          right={sw(member.notifications.meals, (v) => { toggle("meals")(v); if (v) void ensurePermission(true); }, "Meal reminders")}
+        />
+        <Row
+          icon="water-outline"
+          label="Water reminders"
+          value="5 pm and 8:30 pm, only if you're behind"
+          right={sw(member.notifications.water, (v) => { toggle("water")(v); if (v) void ensurePermission(true); }, "Water reminders")}
+        />
+        <Row
           icon="barbell-outline"
           label="Class reminders"
           value="30 minutes before a class you follow"

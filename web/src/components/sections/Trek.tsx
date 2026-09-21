@@ -66,10 +66,10 @@ function TrekCard({ trek, featured }: { trek: TrekType; featured?: boolean }) {
           featured ? "lg:w-[42%] lg:p-9" : "h-40",
         )}
       >
-        {featured ? (
+        {featured || trek.image.startsWith("http") ? (
           <div
             className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-            style={{ backgroundImage: "url(/video/ascent-poster.jpg)" }}
+            style={{ backgroundImage: `url(${trek.image.startsWith("http") ? trek.image : "/video/ascent-poster.jpg"})` }}
           />
         ) : null}
         <div
@@ -182,9 +182,10 @@ function TrekCard({ trek, featured }: { trek: TrekType; featured?: boolean }) {
   );
 }
 
-export function Trek() {
-  const list = upcomingTreks();
-  const next = nextTrek();
+/** `treks` comes from the server (database, or the built-in list) so the owner's posts show without a deploy. */
+export function Trek({ treks }: { treks?: TrekType[] }) {
+  const list = treks ? treks.filter((t) => daysUntil(t.date) >= 0 || t.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date)) : upcomingTreks();
+  const next = treks ? list[0] : nextTrek();
   const rest = list.slice(1);
 
   return (

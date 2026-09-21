@@ -5,6 +5,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { SessionProvider, useSession } from "@/state/session";
 import { FoodProvider } from "@/state/food";
+import { DayProvider } from "@/state/day";
+import { ContentProvider } from "@/state/content";
+import { Reminders } from "@/components/Reminders";
 
 /**
  * Route gate. Jakob's law: the app behaves like every app people already use —
@@ -59,6 +62,7 @@ function Gate() {
         <Stack.Screen name="food/add" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="food/snap" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="food/recent" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+        <Stack.Screen name="food/activity" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
       </Stack>
     </>
   );
@@ -70,7 +74,12 @@ export default function RootLayout() {
       <ThemeProvider>
         <SessionProvider>
           <FoodProvider>
-            <Gate />
+            <DayProvider>
+              <ContentProvider>
+                <Reminders />
+                <Gate />
+              </ContentProvider>
+            </DayProvider>
           </FoodProvider>
         </SessionProvider>
       </ThemeProvider>

@@ -61,7 +61,7 @@ app (Expo)  ──auth + own rows (RLS)──▶  Supabase (Postgres · Auth · 
 | | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | |
 | | `ANTHROPIC_API_KEY`, `ASSISTANT_MODEL` | assistant (optional) |
 | | `FOOD_TEXT_MODEL`, `FOOD_PHOTO_MODEL` | food logging (Phase 3) |
-| | `OWNER_PASSWORD` | `/owner` dashboard (Phase 4) |
+| | `OWNER_PASSWORD` | `/admin/login?mode=owner` — bootstraps the first staff login (Phase 4/6) |
 | | `WHATSAPP_*`, `NEXT_PUBLIC_SITE_URL` | as before |
 | `mobile/.env` | `EXPO_PUBLIC_API_URL` | the Render URL / fitness7gym.in |
 | | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | blank = local mode |
@@ -112,12 +112,85 @@ photo (≤1024 px JPEG)  POST /api/food/photo ─▶ Claude Sonnet 4.5 (vision) 
   goal; the arithmetic is shown to the member under "How this is calculated".
   Members can hide calories entirely in Settings → Training.
 
-### Owner dashboard
+### Adding food — the flow
 
-`/owner` — set `OWNER_PASSWORD` (8+ characters) on Render. Today's check-ins,
-plans ending this week, trek reservations, the last 50 leads, and the food
-analyser's cost this month. Read-only; the secret key stays on the server; the
-cookie holds a signature, not the password.
+`/food/add` is one screen, three ways in, no forms: **tap** a tile (Recent,
+"Usual for lunch", or a shelf — Tiffin, Rice & bread, Curries…) and it's on
+the plate; **search** "idl" for instant table results (plates like "Idli,
+sambar & chutney" first); or **type a sentence** ("2 idli, sambar, oru
+coffee") and it's read by the table, then the model for anything left, with
+one "Add all" button. The plate sits at the top with − n + steppers in the
+food's own unit (idlis, katoris, cups); tap a name to swap for a neighbour.
+One green button lands it in the meal. On Today, each meal is a card with
+its own **+** that opens Add with that meal preselected. Tiles and shelves
+come from `mobile/src/lib/food-picks.ts` (ids only — numbers stay in
+`shared/foods.ts`). Screens: `web/screens/add-*.png`, `add-search-*`,
+`add-sentence-*`, `add-plate-*`.
+
+### Water, activity and reminders
+
+- **Today screen** (`mobile/src/app/food/index.tsx`) — ring shows what's
+  left of the day's budget (target + burned − eaten), three numbers, a row of
+  glasses to tap as you drink (glass size 200/250/300/500 ml), and the day's
+  activities. `food/activity.tsx` logs a session: pick the activity, a
+  duration chip, see the estimate, add. Energy uses MET values
+  (`shared/activities.ts`, Compendium of Physical Activities) × weight × hours;
+  the screen calls it an estimate. Water goal = 33 ml/kg + 250 ml per 30 min
+  of activity, or a fixed goal from Settings → Training.
+- **Storage** — `water_logs` (one row per day) and `activity_logs`, offline-
+  first through the same outbox. Run `supabase/migration-002-water-activity.sql`
+  once on an existing project (fresh projects get it from `schema.sql`).
+- **Reminders** (`mobile/src/lib/reminders.ts`) are local notifications, no
+  server: "Breakfast/Lunch/Dinner logged?" at 9:30 / 1:30 / 9 pm only when
+  that meal is empty, water nudges at 5 and 8:30 pm only when behind. The app
+  reschedules them from its own state every time it comes to the foreground, so
+  a reminder never fires for something already logged. Toggles in Settings →
+  Notifications; permission is asked the first time the Today screen opens.
+  Home also shows one quiet in-app nudge card when something is due — that one
+  needs no permission.
+- New native package: `expo-notifications` (bundled version). Expo Go shows
+  local notifications on both platforms; a dev build is needed only for push.
+
+### Admin dashboard (`/admin`)
+
+The owner and staff run the gym from **`fitness7gym.in/admin`**. `/owner`
+now redirects there.
+
+```
+/admin              Today — check-ins, plans ending, new leads, upcoming treks, food-analyser cost
+/admin/treks        Post a trek: title, place, date, timing, difficulty, slots, prices, photos
+/admin/treks/[id]   Reservations (confirm / cancel, WhatsApp the member), edit, cancel, delete
+/admin/members      Every profile: search by name/phone/email; Ending this week · Inactive · No plan · New
+/admin/members/[id] One member: plan editor, 12-week check-in grid, weight, 14-day food/water/activity, notes
+/admin/leads        Enquiry form leads: new → contacted → joined / lost, with a note
+/admin/announcements  Notices for the site banner and/or the app home (date range, optional link)
+/admin/staff        Staff logins (owner only): coach · admin · owner
+```
+
+- **Roles** (`staff` table): *coach* sees members and notes; *admin* also
+  treks, leads, announcements; *owner* also staff. The sidebar only shows what
+  the role can open, and every server action re-checks.
+- **Sign in** — staff use email + password at `/admin/login` (Supabase Auth;
+  tokens in httpOnly cookies scoped to `/admin`, refreshed automatically).
+  **First time:** sign in with the env `OWNER_PASSWORD` at
+  `/admin/login?mode=owner`, open *Staff*, create your own login, then you
+  never need the env password again (keep it as a fallback).
+- **Treks** are rows in `treks` (status draft / published / cancelled).
+  Published ones replace the hand-written list on the site (`/#trek`) and in
+  the app (`GET /api/treks`, cached on the phone, refreshed every 5 min when
+  opened). While the table is empty the site still shows `shared/gym.ts`'s
+  list, so nothing goes blank. Photos are resized in the browser to 1600 px
+  and land in the public `media` bucket (5 MB cap, JPEG/PNG/WebP).
+- **Announcements** — `GET /api/announcements?audience=app|site`; the site
+  shows them as a slim banner above the hero, the app as a card on Home.
+- **Storage:** run `supabase/migration-003-admin.sql` once on an existing
+  project (fresh projects get it from `schema.sql`). It adds `staff`, `treks`,
+  `announcements`, `member_notes`, lead status, the `admin_member_summary`
+  view and the `media` bucket. No new npm packages.
+- Screenshots: `web/screens/admin/*.png` (desktop 1280 and phone 390), from
+  `node web/scripts/admin-screens.mjs` against a running `next start`.
+- The secret key stays on the server; the owner cookie holds a signature,
+  not the password.
 
 ### Screenshots
 
@@ -262,7 +335,8 @@ Welcome (1.4 s)  →  Login (+91 number · Google · Apple on iOS)
 | Visit | `app/visit.tsx` | Address, call, WhatsApp, hours, coaches, FAQ. |
 | Check in | `app/checkin.tsx` | Member code for the desk, one "I'm here" button, this week's strip, streak, bring-a-friend share. |
 | Progress | `app/progress.tsx` | Streak · last 30 days · all-time visits; body-weight log with a ten-bar chart; 7-day food bars (no chart library). |
-| Food | `app/food/index.tsx` | Today ring (eaten / target), protein bar, meals by slot, Type it · Snap it · Recent. |
+| Today | `app/food/index.tsx` | Ring (left of budget), eaten · burned · budget, protein bar, water glasses, activities, meals by slot, Type it · Snap it · Recent. |
+| Log activity | `app/food/activity.tsx` | Your usual first, then categories → duration chips → estimate → add. |
 | Type it | `app/food/add.tsx` | One box, live parse as you type, every line editable, one green "Add to lunch". |
 | Snap it | `app/food/snap.tsx` | Camera or gallery → resized on-device → Analyse → confidence pills → "Looks right — add". |
 | Recent | `app/food/recent.tsx` | Last 20 distinct items, tick and add. |

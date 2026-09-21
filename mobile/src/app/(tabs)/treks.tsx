@@ -2,7 +2,8 @@ import { Pressable, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { upcomingTreks, trekIntro, inr, longDate, daysUntil, groupIndian } from "@f7/content";
+import { trekIntro, inr, longDate, daysUntil, groupIndian } from "@f7/content";
+import { useContent } from "@/state/content";
 import { radius } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { useSession } from "@/state/session";
@@ -16,7 +17,7 @@ export default function Treks() {
   const { member } = useSession();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const list = upcomingTreks();
+  const { upcoming: list } = useContent();
 
   return (
     <ScrollView

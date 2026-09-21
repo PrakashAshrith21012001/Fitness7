@@ -41,10 +41,10 @@ const dayMinus = (n) => { const d = new Date(); d.setDate(d.getDate() - n); retu
 const member = {
   id: "local-demo", name: "Praki", phone: "+919876543210", provider: "phone", goal: "fat-loss", slot: "evening",
   plan: { id: "quarterly", name: "Quarterly", renewsOn: dayMinus(-40) }, joinedOn: dayMinus(60), onboarded: true, treksDone: 2, streakWeeks: 3,
-  notifications: { classes: true, treks: true, renewals: true },
+  notifications: { classes: true, treks: true, renewals: true, meals: true, water: true },
   checkins: [dayMinus(0), dayMinus(2), dayMinus(4), dayMinus(7), dayMinus(9), dayMinus(14)],
   weights: [{ date: dayMinus(21), kg: 78 }, { date: dayMinus(14), kg: 77.4 }, { date: dayMinus(7), kg: 76.9 }, { date: dayMinus(0), kg: 76.2 }],
-  followed: ["strength"], reserved: [], heightCm: 172, age: 28, sex: "male", activity: "gym5", hideCalories: false,
+  followed: ["strength"], reserved: [], heightCm: 172, age: 28, sex: "male", activity: "gym5", hideCalories: false, glassMl: 250,
 };
 const entry = (i, date, meal, name, foodId, grams, portionLabel, kcal, proteinG, carbsG, fatG, confidence = 1, source = "table") =>
   ({ id: `e${i}`, date, meal, name, foodId, grams, portionLabel, kcal, proteinG, carbsG, fatG, confidence, source, loggedAt: `${date}T0${(i % 9)}:00:00.000Z` });
@@ -64,28 +64,47 @@ const food = [
   ]),
 ];
 
+const day = {
+  water: { [dayMinus(0)]: 1250, [dayMinus(1)]: 2500, [dayMinus(2)]: 2000, [dayMinus(3)]: 2750, [dayMinus(5)]: 1500 },
+  activities: [
+    { id: "a1", date: dayMinus(0), activityId: "strength", name: "Strength training", minutes: 60, kcal: 380, loggedAt: `${dayMinus(0)}T02:00:00.000Z` },
+    { id: "a2", date: dayMinus(1), activityId: "cricket", name: "Cricket", minutes: 90, kcal: 550, loggedAt: `${dayMinus(1)}T12:00:00.000Z` },
+    { id: "a3", date: dayMinus(3), activityId: "walk", name: "Walking (brisk)", minutes: 30, kcal: 165, loggedAt: `${dayMinus(3)}T01:00:00.000Z` },
+  ],
+};
+
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const shots = [
   ["home", "/"],
   ["food", "/food"],
-  ["add", "/food/add?text=" + encodeURIComponent("2 idli, sambar, oru filter coffee")],
+  ["add", "/food/add?meal=lunch"],
+  ["add-search", "/food/add?meal=breakfast&text=idl"],
+  ["add-sentence", "/food/add?text=" + encodeURIComponent("2 idli, sambar, oru filter coffee")],
   ["snap", "/food/snap?fixture=1"],
+  ["activity", "/food/activity"],
   ["settings", "/settings"],
   ["progress", "/progress"],
 ];
 const results = [];
 for (const theme of ["dark", "light"]) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: theme });
-  await ctx.addInitScript(({ member, food, theme }) => {
+  await ctx.addInitScript(({ member, food, day, theme }) => {
     localStorage.setItem("f7-session", JSON.stringify(member));
     localStorage.setItem("f7-food", JSON.stringify(food));
+    localStorage.setItem("f7-day", JSON.stringify(day));
     localStorage.setItem("f7-theme", theme);
-  }, { member, food, theme });
+  }, { member, food, day, theme });
   for (const [name, route] of shots) {
     const page = await ctx.newPage();
     await page.goto(`http://localhost:4173${route}`, { waitUntil: "networkidle" });
     await page.waitForTimeout(name === "home" ? 2500 : 1200);
     await page.screenshot({ path: path.join(out, `${name}-${theme}.png`), fullPage: false });
+    if (name === "add-sentence") {
+      // the plate: add the parsed lines, then screenshot the steppers + sticky button
+      await page.getByText(/Add all to plate/).first().click();
+      await page.waitForTimeout(600);
+      await page.screenshot({ path: path.join(out, `add-plate-${theme}.png`), fullPage: false });
+    }
     if (name === "food") {
       // contrast of the ring labels: sample text colour vs the card background behind it
       const c = await page.evaluate(() => {

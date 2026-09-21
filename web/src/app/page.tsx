@@ -18,11 +18,17 @@ import { Pricing } from "@/components/sections/Pricing";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Faq } from "@/components/sections/Faq";
 import { Visit } from "@/components/sections/Visit";
+import { SiteNotice } from "@/components/sections/SiteNotice";
+import { getPublishedTreks, getActiveAnnouncements } from "@/server/treks";
 
-export default function Home() {
+export const revalidate = 60;
+
+export default async function Home() {
+  const [{ treks }, notices] = await Promise.all([getPublishedTreks(), getActiveAnnouncements("site")]);
   return (
     <>
       <Nav />
+      <SiteNotice notices={notices} />
       <main>
         {/* The climb: ridgelines fall past a pinned camera while the page
             lightens from valley pre-dawn through the cloud layer into sun. */}
@@ -60,7 +66,7 @@ export default function Home() {
           <Stats />
         </div>
         <Classes />
-        <Trek />
+        <Trek treks={treks} />
         <Trainers />
         <Process />
         <Facilities />

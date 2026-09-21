@@ -7,6 +7,7 @@ import { radius, type } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { useSession, today } from "@/state/session";
 import { useFood } from "@/state/food";
+import { useDay } from "@/state/day";
 import { targetFor } from "@/components/TargetCard";
 import { Body, Card, Display, Eyebrow, LimeButton } from "@/components/ui";
 import { Screen } from "@/components/Screen";
@@ -21,6 +22,7 @@ export default function Progress() {
   const colors = useColors();
   const { member, logWeight } = useSession();
   const { totals } = useFood();
+  const { waterMl, waterGoal, glassMl, burned, activeMinutes } = useDay();
   const [kg, setKg] = useState("");
   if (!member) return null;
 
@@ -30,8 +32,11 @@ export default function Progress() {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    return { iso, label: "SMTWTFS"[d.getDay()], ...totals(iso) };
+    return { iso, label: "SMTWTFS"[d.getDay()], ...totals(iso), water: waterMl(iso), waterGoal: waterGoal(iso), burn: burned(iso), minutes: activeMinutes(iso) };
   });
+  const weekMinutes = days.reduce((a, d) => a + d.minutes, 0);
+  const weekBurn = days.reduce((a, d) => a + d.burn, 0);
+  const waterDays = days.filter((d) => d.water > 0).length;
   const maxKcal = Math.max(target?.kcal ?? 0, ...days.map((d) => d.kcal), 1);
   const loggedDays = days.filter((d) => d.count).length;
   const hideCal = !!member.hideCalories;
@@ -250,6 +255,40 @@ export default function Progress() {
           )}
         </Card>
       ) : null}
+
+      {/* Movement + water — the week in two lines */}
+      <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+        <View style={{ flex: 1, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, paddingVertical: 14, alignItems: "center" }}>
+          <Display size="h1" style={{ color: colors.lime }}>{weekMinutes}</Display>
+          <Body size="micro" style={{ marginTop: 4, textAlign: "center" }}>ACTIVE MIN · 7 DAYS</Body>
+        </View>
+        <View style={{ flex: 1, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, paddingVertical: 14, alignItems: "center" }}>
+          <Display size="h1" style={{ color: colors.lime }}>{hideCal ? "—" : fmtKcal(weekBurn)}</Display>
+          <Body size="micro" style={{ marginTop: 4, textAlign: "center" }}>KCAL BURNED</Body>
+        </View>
+      </View>
+
+      <Card style={{ marginTop: 12 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+          <Eyebrow>Water · last 7 days</Eyebrow>
+          <Body size="small">{waterDays ? `${waterDays} day${waterDays === 1 ? "" : "s"} logged` : "Not logged yet"}</Body>
+        </View>
+        <View style={{ flexDirection: "row", gap: 6, marginTop: 14 }}>
+          {days.map((d) => {
+            const p = d.waterGoal ? Math.min(1, d.water / d.waterGoal) : 0;
+            const isToday = d.iso === today();
+            return (
+              <View key={d.iso} style={{ flex: 1, alignItems: "center", gap: 6 }}>
+                <View style={{ width: "100%", height: 40, borderRadius: 6, borderWidth: 1, borderColor: isToday ? colors.lime : colors.line, backgroundColor: colors.surface2, overflow: "hidden", justifyContent: "flex-end" }}>
+                  <View style={{ height: `${p * 100}%`, backgroundColor: p >= 1 ? colors.green : "rgba(46,204,113,0.45)" }} />
+                </View>
+                <Body size="micro">{d.label}</Body>
+              </View>
+            );
+          })}
+        </View>
+        <Body size="micro" style={{ marginTop: 10 }}>{glassMl} ML GLASSES · FULL BAR = THE DAY'S GOAL</Body>
+      </Card>
 
       <LimeButton label="Ask a coach about your numbers" icon="logo-whatsapp" variant="outline" href={wa.general()} style={{ marginTop: 16 }} />
     </Screen>

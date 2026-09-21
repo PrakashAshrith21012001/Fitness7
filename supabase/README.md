@@ -58,3 +58,14 @@ Settings → Privacy → *Delete my data* calls `DELETE /api/member/me`, which r
 ## 6. Food photos
 
 Photos are **not stored**. The app resizes to 1024 px, posts the JPEG to `/api/food/photo`, the route forwards it to Claude and returns the items. Nothing is written to Storage. (If that ever changes: private bucket `food-photos`, path `{member_id}/{log_id}.jpg`, RLS on `storage.objects`, a nightly `pg_cron` delete older than 30 days.)
+
+## 7. Admin dashboard (`/admin`)
+
+Run `supabase/migration-003-admin.sql` once (SQL editor) on a project created before Phase 6; fresh projects get it from `schema.sql`. It adds:
+
+- `staff` — who may open `/admin` (`role`: coach / admin / owner, `active`). Rows are created from `/admin/staff`, which also creates the Supabase Auth user (email + password, confirmed). Nothing to do in the Supabase dashboard.
+- `treks`, `announcements` — public **read** of published/active rows (RLS), writes only with the secret key from the server.
+- `member_notes`, `leads.status/note`, `trek_reservations.note`, view `admin_member_summary`.
+- Storage bucket **`media`** — public read, 5 MB, JPEG/PNG/WebP. Trek photos go to `treks/<id>/…`. Uploads happen only through `/api/admin/upload` with a staff cookie.
+
+**First admin:** sign in at `/admin/login?mode=owner` with the env `OWNER_PASSWORD`, open *Staff*, add yourself as *owner*. From then on use email + password at `/admin/login`.

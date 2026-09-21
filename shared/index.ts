@@ -7,3 +7,5 @@ export * from "./assistant";
 export * from "./supabase-types";
 export * from "./nutrition";
 export * from "./foods";
+export * from "./activities";
+export * from "./treks-content";

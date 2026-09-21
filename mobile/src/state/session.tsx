@@ -43,7 +43,7 @@ export type Member = {
   treksDone: number;
   /** Consecutive weeks (ending this week) with at least one check-in. Derived from `checkins`. */
   streakWeeks: number;
-  notifications: { classes: boolean; treks: boolean; renewals: boolean };
+  notifications: { classes: boolean; treks: boolean; renewals: boolean; meals: boolean; water: boolean };
   /** ISO dates (YYYY-MM-DD) the member checked in, newest last */
   checkins: string[];
   /** Weight log, oldest first */
@@ -59,7 +59,12 @@ export type Member = {
   activity?: Activity;
   /** Some members don't want to see calories at all */
   hideCalories?: boolean;
+  /** Water — a member-set goal in ml (else computed from weight) and the glass they drink from */
+  waterGoalMl?: number;
+  glassMl?: number;
 };
+
+export const DEFAULT_NOTIFICATIONS = { classes: true, treks: true, renewals: true, meals: true, water: true } as const;
 
 const defaults: Pick<Member, "checkins" | "weights" | "followed" | "reserved" | "treksDone" | "streakWeeks"> = {
   checkins: [],
@@ -151,7 +156,9 @@ function fromRows(
     onboarded: row.onboarded,
     treksDone: row.treks_done ?? 0,
     streakWeeks: streakFrom(ck),
-    notifications: prefs ? { classes: prefs.classes, treks: prefs.treks, renewals: prefs.renewals } : { classes: true, treks: true, renewals: true },
+    notifications: prefs
+      ? { classes: prefs.classes, treks: prefs.treks, renewals: prefs.renewals, meals: prefs.meals ?? true, water: prefs.water ?? true }
+      : { ...DEFAULT_NOTIFICATIONS },
     checkins: ck,
     weights: weights.map((w) => ({ date: w.date, kg: Number(w.kg) })).sort((a, b) => a.date.localeCompare(b.date)),
     followed: follows.map((f) => f.class_id),
@@ -161,6 +168,8 @@ function fromRows(
     sex: row.sex ?? undefined,
     activity: row.activity ?? undefined,
     hideCalories: row.hide_calories ?? false,
+    waterGoalMl: row.water_goal_ml ?? undefined,
+    glassMl: row.glass_ml ?? 250,
   };
 }
 
@@ -182,6 +191,8 @@ function toRowPatch(patch: Partial<Member>): Op | null {
   if ("sex" in patch) p.sex = patch.sex ?? null;
   if ("activity" in patch) p.activity = patch.activity ?? null;
   if ("hideCalories" in patch) p.hide_calories = !!patch.hideCalories;
+  if ("waterGoalMl" in patch) p.water_goal_ml = patch.waterGoalMl ?? null;
+  if ("glassMl" in patch && patch.glassMl) p.glass_ml = patch.glassMl;
   return Object.keys(p).length ? { kind: "member.update", patch: p } : null;
 }
 
@@ -309,6 +320,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const v = await AsyncStorage.getItem(KEY);
         if (v && !cancelled) {
           const m = { ...defaults, ...(JSON.parse(v) as Member) };
+          m.notifications = { ...DEFAULT_NOTIFICATIONS, ...(m.notifications ?? {}) };
           await persist({ ...m, streakWeeks: streakFrom(m.checkins) });
         }
       } catch {
@@ -352,7 +364,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         plan: null,
         joinedOn: new Date().toISOString().slice(0, 10),
         onboarded: false,
-        notifications: { classes: true, treks: true, renewals: true },
+        notifications: { ...DEFAULT_NOTIFICATIONS },
         ...defaults,
       };
       await persist(m);

@@ -6,7 +6,6 @@ import {
   brand,
   stats,
   classes,
-  nextTrek,
   trialOffer,
   contact,
   wa,
@@ -18,6 +17,9 @@ import {
 } from "@f7/content";
 import { WeekStrip } from "@/components/WeekStrip";
 import { TodayTile } from "@/components/TodayTile";
+import { NudgeCard } from "@/components/NudgeCard";
+import { AnnouncementCard } from "@/components/AnnouncementCard";
+import { useContent } from "@/state/content";
 import { today } from "@/state/session";
 import { radius } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
@@ -50,7 +52,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { member } = useSession();
-  const trek = nextTrek();
+  const { next: trek } = useContent();
   const hasPlan = !!member?.plan;
   const popular = plans.find((p) => p.highlight) ?? plans[0];
   const checkedInToday = !!member?.checkins.includes(today());
@@ -117,6 +119,7 @@ export default function Home() {
       {/* ---------- EMPTY STATE: no active plan ---------- */}
       {!hasPlan ? (
         <View style={{ paddingHorizontal: 20, marginTop: 18 }}>
+          <AnnouncementCard />
           <Card accent>
             <Eyebrow>Your first week</Eyebrow>
             <Display size="h2" style={{ marginTop: 8 }}>
@@ -208,8 +211,10 @@ export default function Home() {
             </Card>
           </Pressable>
 
-          {/* Today — food, compact; opens the Food screen */}
+          {/* Today — food, water, movement; opens the Today screen */}
           <TodayTile />
+          <NudgeCard />
+          <AnnouncementCard />
 
           <Card>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>

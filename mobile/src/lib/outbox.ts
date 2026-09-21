@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
-import type { FoodLogRow, MemberRow, NotificationPrefsRow } from "@f7/content";
+import type { ActivityLogRow, FoodLogRow, MemberRow, NotificationPrefsRow } from "@f7/content";
 import { supabase } from "./supabase";
 
 /**
@@ -23,7 +23,10 @@ export type Op =
   | { kind: "follow.set"; classId: string; on: boolean }
   | { kind: "reserve.set"; trekId: string; on: boolean }
   | { kind: "food.add"; row: Omit<FoodLogRow, "member_id" | "logged_at" | "deleted_at"> }
-  | { kind: "food.remove"; id: string };
+  | { kind: "food.remove"; id: string }
+  | { kind: "water.set"; date: string; ml: number }
+  | { kind: "activity.add"; row: Omit<ActivityLogRow, "member_id" | "logged_at" | "deleted_at"> }
+  | { kind: "activity.remove"; id: string };
 
 export type QueuedOp = Op & { id: string; memberId: string; at: number; tries: number };
 
@@ -118,6 +121,12 @@ async function apply(op: QueuedOp): Promise<{ error: { code?: string; message?: 
       return c.from("food_logs").upsert({ ...op.row, member_id: m }, { onConflict: "id", ignoreDuplicates: true });
     case "food.remove":
       return c.from("food_logs").update({ deleted_at: new Date().toISOString() }).eq("id", op.id).eq("member_id", m);
+    case "water.set":
+      return c.from("water_logs").upsert({ member_id: m, date: op.date, ml: op.ml, updated_at: new Date().toISOString() }, { onConflict: "member_id,date" });
+    case "activity.add":
+      return c.from("activity_logs").upsert({ ...op.row, member_id: m }, { onConflict: "id", ignoreDuplicates: true });
+    case "activity.remove":
+      return c.from("activity_logs").update({ deleted_at: new Date().toISOString() }).eq("id", op.id).eq("member_id", m);
   }
 }
 

@@ -17,7 +17,8 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, "node_modules"),
 ];
 
-// Never walk up past the workspace root looking for modules.
-config.resolver.disableHierarchicalLookup = true;
+// Keep hierarchical lookup on: packages with their own nested node_modules
+// (react-native-reanimated → semver 7) must resolve those before the hoisted
+// copies at the root. Metro never walks above the workspace root anyway.
 
 module.exports = config;
