@@ -61,7 +61,7 @@ export function WaterStrip({ compact }: { compact?: boolean }) {
                   alignItems: "center",
                   justifyContent: "center",
                   borderWidth: 1,
-                  borderColor: full ? "rgba(46,204,113,0.45)" : next ? colors.lime : colors.line,
+                  borderColor: full ? colors.accentBorder : next ? colors.lime : colors.line,
                   borderStyle: next ? "dashed" : "solid",
                   backgroundColor: full ? colors.limeSoft : colors.surface2,
                 },

@@ -70,7 +70,7 @@ export default function Upgrade() {
           ) : null}
         </View>
         <Body size="micro" style={{ marginTop: 2 }}>
-          {plan.period.toUpperCase()} · NO JOINING FEE
+          {plan.period} · no joining fee
         </Body>
         <View style={{ marginTop: 14, gap: 8 }}>
           {plan.features.map((f) => (
@@ -89,8 +89,8 @@ export default function Upgrade() {
         </Pressable>
       </Card>
 
-      <Body size="micro" style={{ letterSpacing: 1.4, marginTop: 24, marginBottom: 10 }}>
-        HOW WOULD YOU LIKE TO PAY?
+      <Body size="micro" style={{ marginTop: 24, marginBottom: 10 }}>
+        How would you like to pay?
       </Body>
       <View style={{ gap: 10 }}>
         {methods.map((m) => {

@@ -153,7 +153,7 @@ export default function Login() {
         </Body>
 
         <View style={{ marginTop: 28 }}>
-          <Body size="micro" style={{ marginBottom: 8, letterSpacing: 1.4 }}>MOBILE NUMBER</Body>
+          <Body size="micro" style={{ marginBottom: 8 }}>Mobile number</Body>
           <View style={fieldStyle(!!error && !pendingPhone)}>
             <Body size="title" muted={false} style={{ marginRight: 10 }}>+91</Body>
             <TextInput
@@ -179,7 +179,7 @@ export default function Login() {
 
           {pendingPhone ? (
             <View style={{ marginTop: 16 }}>
-              <Body size="micro" style={{ marginBottom: 8, letterSpacing: 1.4 }}>CODE FROM THE SMS</Body>
+              <Body size="micro" style={{ marginBottom: 8 }}>Code from the SMS</Body>
               <View style={fieldStyle(!!error)}>
                 <TextInput
                   ref={codeRef}

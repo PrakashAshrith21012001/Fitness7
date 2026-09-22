@@ -1,148 +1,90 @@
-import { useState } from "react";
-import { LayoutAnimation, Platform, Pressable, ScrollView, UIManager, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { classes, wa } from "@f7/content";
+import * as Haptics from "expo-haptics";
+import { classes, type GymClass } from "@f7/content";
+import { radius } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { useSession } from "@/state/session";
-import * as Haptics from "expo-haptics";
-import { Body, Card, LimeButton, Pill, SectionHeader } from "@/components/ui";
+import { Body, Display } from "@/components/ui";
+import { PhotoCard } from "@/components/PhotoCard";
+import { Enter } from "@/components/motion";
+import { classPhoto } from "@/lib/photos";
 
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+/**
+ * Classes — the "Choose your bottle" screen: a big title, one row of
+ * category chips, a two-column grid of photo tiles with the follow bell in
+ * the corner. Tap a tile for the class page.
+ */
 
-const tone = {
-  Low: "muted",
-  Moderate: "amber",
-  High: "red",
-  "All levels": "lime",
-} as const;
+type Cat = "all" | "strength" | "cardio" | "mind" | "combat" | "coaching";
+const CATS: { id: Cat; label: string; ids: string[] }[] = [
+  { id: "all", label: "All", ids: [] },
+  { id: "strength", label: "Strength", ids: ["strength", "crossfit"] },
+  { id: "cardio", label: "Cardio", ids: ["hiit", "cardio"] },
+  { id: "mind", label: "Mind & body", ids: ["yoga", "ladies"] },
+  { id: "combat", label: "Combat", ids: ["combat"] },
+  { id: "coaching", label: "Coaching", ids: ["personal"] },
+];
 
 export default function Classes() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const [open, setOpen] = useState<string | null>(null);
+  const router = useRouter();
   const { member, toggleFollow } = useSession();
+  const [cat, setCat] = useState<Cat>("all");
+
+  const list = useMemo<GymClass[]>(() => {
+    const c = CATS.find((x) => x.id === cat)!;
+    return cat === "all" ? classes : classes.filter((k) => c.ids.includes(k.id));
+  }, [cat]);
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.black }}
-      contentContainerStyle={{
-        paddingTop: insets.top + 20,
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-      }}
-      showsVerticalScrollIndicator={false}
-    >
-      <SectionHeader
-        eyebrow="What we run"
-        title="Eight ways to get strong"
-        body="Every class is coached. Tap one to see what a session looks like."
-      />
+    <ScrollView style={{ backgroundColor: colors.black }} contentContainerStyle={{ paddingTop: insets.top + 16, paddingHorizontal: 20, paddingBottom: 112 }} showsVerticalScrollIndicator={false}>
+      <Body size="small" style={{ fontWeight: "600" }}>{classes.length} classes · every one coached</Body>
+      <Display size="hero" style={{ marginTop: 6 }}>Find your{"\n"}class</Display>
 
-      <View style={{ gap: 12 }}>
-        {classes.map((cls) => {
-          const isOpen = open === cls.id;
-          const following = !!member?.followed.includes(cls.id);
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 18 }} style={{ marginHorizontal: -20, paddingHorizontal: 20 }}>
+        {CATS.map((c) => {
+          const on = c.id === cat;
           return (
             <Pressable
-              key={cls.id}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: isOpen }}
+              key={c.id}
               onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setOpen(isOpen ? null : cls.id);
+                Haptics.selectionAsync().catch(() => {});
+                setCat(c.id);
               }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on }}
+              style={{ minHeight: 40, paddingHorizontal: 16, justifyContent: "center", borderRadius: radius.pill, backgroundColor: on ? colors.green : colors.surface }}
             >
-              <Card style={isOpen ? { borderColor: "rgba(200,255,30,0.4)" } : undefined}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-                  <View
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 14,
-                      borderWidth: 1,
-                      borderColor: colors.line,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name="barbell-outline" size={20} color={colors.lime} />
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <Body size="title" muted={false} style={{ fontWeight: "600" }}>
-                      {cls.name}
-                    </Body>
-                    <Body size="small" style={{ marginTop: 3 }}>
-                      {cls.tagline}
-                    </Body>
-                  </View>
-
-                  <Pressable
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      toggleFollow(cls.id);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={following ? `Stop following ${cls.name}` : `Follow ${cls.name}`}
-                    accessibilityState={{ selected: following }}
-                    hitSlop={6}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: following ? colors.green : "transparent",
-                      borderWidth: following ? 0 : 1,
-                      borderColor: colors.line,
-                    }}
-                  >
-                    <Ionicons name={following ? "notifications" : "notifications-outline"} size={18} color={following ? colors.onAccent : colors.muted} />
-                  </Pressable>
-                </View>
-
-                {isOpen ? (
-                  <View style={{ marginTop: 16 }}>
-                    <Body>{cls.description}</Body>
-                    <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
-                      <Pill label={cls.intensity} tone={tone[cls.intensity]} />
-                      <Pill label={`${cls.durationMin} min`} tone="muted" />
-                    </View>
-                    <Body size="small" style={{ marginTop: 12, color: colors.lime }}>
-                      {cls.schedule}
-                    </Body>
-                    <Body size="small" style={{ marginTop: 6 }}>
-                      {following ? "You follow this class — you'll get a reminder 30 minutes before." : "Tap the bell to follow it and get a reminder before each session."}
-                    </Body>
-                    <LimeButton
-                      label={member?.plan ? "Tell the coach I'm coming" : "Try this class"}
-                      icon="logo-whatsapp"
-                      href={wa.class(cls.name)}
-                      style={{ marginTop: 16 }}
-                    />
-                  </View>
-                ) : (
-                  <View style={{ flexDirection: "row", gap: 8, marginTop: 14 }}>
-                    <Pill label={cls.intensity} tone={tone[cls.intensity]} />
-                    <Pill label={`${cls.durationMin} min`} tone="muted" />
-                  </View>
-                )}
-              </Card>
+              <Body size="small" style={{ fontWeight: "600", color: on ? colors.onAccent : colors.white }}>{c.label}</Body>
             </Pressable>
           );
         })}
-      </View>
+        <View style={{ width: 12 }} />
+      </ScrollView>
 
-      <LimeButton
-        label="Ask a coach which suits you"
-        icon="chatbubble-ellipses"
-        variant="outline"
-        href={wa.general()}
-        style={{ marginTop: 20 }}
-      />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 14 }}>
+        {list.map((cls, i) => {
+          const following = !!member?.followed.includes(cls.id);
+          return (
+            <Enter key={cls.id} index={i} style={{ width: "48%" }}>
+              <PhotoCard
+                photo={classPhoto(cls.id)}
+                title={cls.name}
+                meta={`${cls.durationMin} min · ${cls.intensity}`}
+                width={undefined}
+                height={200}
+                corner={{ icon: following ? "notifications" : "notifications-outline", on: following, label: following ? `Stop following ${cls.name}` : `Follow ${cls.name}`, onPress: () => toggleFollow(cls.id) }}
+                onPress={() => router.push({ pathname: "/class/[id]", params: { id: cls.id } })}
+                accessibilityLabel={`${cls.name}, ${cls.durationMin} minutes, ${cls.intensity}`}
+              />
+            </Enter>
+          );
+        })}
+      </View>
     </ScrollView>
   );
 }

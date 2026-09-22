@@ -6,6 +6,7 @@ import { FOOD_BY_ID, macrosFor, similarFoods, type Food } from "@f7/content";
 import { radius } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { Body } from "@/components/ui";
+import { Kcal } from "@/components/Kcal";
 import type { DraftItem } from "@/state/food";
 
 /** Round grams to a sensible step: idli → 40 g each, rice → 25 g, drinks → 30 ml. */
@@ -34,7 +35,8 @@ export function rescale(item: DraftItem, grams: number): DraftItem {
 }
 
 function labelFor(f: Food, grams: number): string {
-  const n = Math.round((grams / f.portion.grams) * 10) / 10;
+  // pieces in halves (2, 2.5 idli); everything else in tenths
+  const n = f.unit === "piece" ? Math.round((grams / f.portion.grams) * 2) / 2 : Math.round((grams / f.portion.grams) * 10) / 10;
   if (f.unit === "piece") return `${n} × ${f.portion.label.replace(/^1 /, "")}`;
   if (n === 1) return f.portion.label;
   return `${grams} ${f.category === "drink" ? "ml" : "g"}`;
@@ -100,19 +102,17 @@ export function FoodItemRow({
               {/^\d+ ?(g|ml)$/.test(item.portionLabel) ? "" : `${item.portionLabel} · `}
               {item.grams} {food?.category === "drink" ? "ml" : "g"}
             </Body>
-            <View style={{ borderRadius: radius.pill, borderWidth: 1, borderColor: sure ? "rgba(46,204,113,0.35)" : colors.line, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <View style={{ borderRadius: radius.pill, borderWidth: 1, borderColor: sure ? colors.accentBorder : colors.line, paddingHorizontal: 8, paddingVertical: 2 }}>
               <Body size="micro" style={{ color: sure ? colors.lime : colors.muted, fontWeight: "700" }}>
-                {sure ? "HIGH" : "CHECK THIS"}
+                {sure ? "From the table" : "Check this"}
               </Body>
             </View>
           </View>
         </View>
         {!hideCalories ? (
           <View style={{ alignItems: "flex-end" }}>
-            <Body size="title" muted={false} style={{ fontWeight: "700" }}>
-              {item.kcal}
-            </Body>
-            <Body size="micro">KCAL · {Math.round(item.proteinG)} G PROT</Body>
+            <Kcal value={item.kcal} size="title" />
+            <Body size="micro">{Math.round(item.proteinG)} g protein</Body>
           </View>
         ) : null}
       </View>

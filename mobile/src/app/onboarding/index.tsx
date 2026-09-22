@@ -36,7 +36,7 @@ const SLOTS: { id: Slot; label: string; hint: string }[] = [
 export default function Onboarding() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { member, update } = useSession();
+  const { member, update, logWeight } = useSession();
   const [step, setStep] = useState(0);
   const [name, setName] = useState(member?.name ?? "");
   const [goal, setGoal] = useState<Goal | undefined>(member?.goal);
@@ -44,11 +44,13 @@ export default function Onboarding() {
   const [numbers, setNumbers] = useState<Numbers>({});
   const total = 4;
 
-  const numbersComplete = !!(numbers.heightCm && numbers.age && numbers.sex && numbers.activity);
+  const numbersComplete = !!(numbers.kg && numbers.heightCm && numbers.age && numbers.sex && numbers.activity);
   const canNext = step === 0 ? name.trim().length >= 2 : step === 1 ? !!goal : step === 2 ? !!slot : numbersComplete;
 
   const finish = async (withNumbers: boolean) => {
-    await update({ name: name.trim(), goal, slot, onboarded: true, ...(withNumbers ? numbers : {}) });
+    const { kg, ...rest } = numbers;
+    await update({ name: name.trim(), goal, slot, onboarded: true, ...(withNumbers ? rest : {}) });
+    if (withNumbers && kg) await logWeight(kg);
   };
 
   const next = async () => {
@@ -110,7 +112,7 @@ export default function Onboarding() {
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 36, paddingBottom: insets.bottom + 24 }} keyboardShouldPersistTaps="handled">
         {step === 0 ? (
           <>
-            <Body size="micro" style={{ letterSpacing: 1.4 }}>FIRST, THE EASY ONE</Body>
+            <Body size="micro" >First, the easy one</Body>
             <Display size="h1" style={{ marginTop: 8 }}>What should we call you?</Display>
             <TextInput
               value={name}
@@ -128,7 +130,7 @@ export default function Onboarding() {
           </>
         ) : step === 1 ? (
           <>
-            <Body size="micro" style={{ letterSpacing: 1.4 }}>SO THE COACH KNOWS WHERE TO START</Body>
+            <Body size="micro" >So the coach knows where to start</Body>
             <Display size="h1" style={{ marginTop: 8 }}>What are you here for?</Display>
             <View style={{ gap: 10, marginTop: 24 }}>
               {GOALS.map((g) => <Option key={g.id} selected={goal === g.id} onPress={() => setGoal(g.id)} label={g.label} hint={g.hint} icon={g.icon} />)}
@@ -136,7 +138,7 @@ export default function Onboarding() {
           </>
         ) : step === 2 ? (
           <>
-            <Body size="micro" style={{ letterSpacing: 1.4 }}>ALMOST THERE</Body>
+            <Body size="micro" >Almost there</Body>
             <Display size="h1" style={{ marginTop: 8 }}>When do you usually train?</Display>
             <View style={{ gap: 10, marginTop: 24 }}>
               {SLOTS.map((s) => <Option key={s.id} selected={slot === s.id} onPress={() => setSlot(s.id)} label={s.label} hint={s.hint} />)}
@@ -144,7 +146,7 @@ export default function Onboarding() {
           </>
         ) : (
           <>
-            <Body size="micro" style={{ letterSpacing: 1.4 }}>OPTIONAL · FOR YOUR DAILY TARGET</Body>
+            <Body size="micro" >Optional · For your daily target</Body>
             <Display size="h1" style={{ marginTop: 8 }}>Your numbers</Display>
             <Body style={{ marginTop: 8 }}>
               With these the Food screen can show a daily energy and protein target. Skip it and add them later in Settings.

@@ -9,6 +9,7 @@ import { Body } from "@/components/ui";
 import { rescale, swapTo } from "@/components/FoodItemRow";
 import { portionStep, portionsOf } from "@/lib/food-picks";
 import type { DraftItem } from "@/state/food";
+import { Kcal } from "@/components/Kcal";
 
 /**
  * One line on the plate: icon, name, portion, kcal, and a − n + stepper in
@@ -68,13 +69,13 @@ export function PlateRow({
         <Pressable onPress={() => alternatives.length && setOpen((o) => !o)} accessibilityRole={alternatives.length ? "button" : undefined} accessibilityLabel={`${item.name}, ${item.portionLabel}`} style={{ flex: 1 }}>
           <Body size="body" muted={false} style={{ fontWeight: "600" }} numberOfLines={1}>{item.name}</Body>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 1 }}>
-            <Body size="micro" numberOfLines={1}>{item.portionLabel.toUpperCase()}</Body>
-            {!sure ? <Body size="micro" style={{ color: colors.lime }}>· ESTIMATE</Body> : null}
+            <Body size="micro" numberOfLines={1}>{item.portionLabel}</Body>
+            {!sure ? <Body size="micro" style={{ color: colors.lime }}>· estimate</Body> : null}
             {alternatives.length ? <Ionicons name={open ? "chevron-up" : "chevron-down"} size={12} color={colors.muted} /> : null}
           </View>
         </Pressable>
         {!hideCalories ? (
-          <Body size="body" muted={false} style={{ fontWeight: "700", minWidth: 40, textAlign: "right" }}>{Math.round(item.kcal)}</Body>
+          <Kcal value={item.kcal} size="body" style={{ minWidth: 56, textAlign: "right" }} />
         ) : null}
         <View style={{ flexDirection: "row", alignItems: "center", borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface2, paddingHorizontal: 2 }}>
           {stepBtn("remove", () => bump(-1), "Less", food ? (n ?? 1) <= step : item.grams <= 10)}

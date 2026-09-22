@@ -1,11 +1,10 @@
 import { useEffect } from "react";
-import { AppState, Platform } from "react-native";
+import { AppState } from "react-native";
 import { useRouter } from "expo-router";
-import * as Notifications from "expo-notifications";
 import { useSession, today } from "@/state/session";
 import { useFood } from "@/state/food";
 import { useDay } from "@/state/day";
-import { syncReminders, clearReminders } from "@/lib/reminders";
+import { syncReminders, clearReminders, onReminderTap } from "@/lib/reminders";
 
 /** What today still needs, from the app's own state. Shared by the notifications and the in-app nudge card. */
 export function useDayStatus() {
@@ -81,14 +80,13 @@ export function Reminders() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
 
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    const sub = Notifications.addNotificationResponseReceivedListener((res) => {
-      const url = res.notification.request.content.data?.url;
-      if (url === "/food/add" || url === "/food") router.push(url);
-    });
-    return () => sub.remove();
-  }, [router]);
+  useEffect(
+    () =>
+      onReminderTap((url) => {
+        if (url === "/food/add" || url === "/food") router.push(url);
+      }),
+    [router],
+  );
 
   return null;
 }

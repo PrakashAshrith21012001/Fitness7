@@ -164,7 +164,7 @@ export default function Chat() {
                   justifyContent: "center",
                   borderRadius: radius.pill,
                   borderWidth: 1,
-                  borderColor: "rgba(46,204,113,0.45)",
+                  borderColor: colors.accentBorder,
                   backgroundColor: colors.limeSoft,
                 },
                 pressed && { backgroundColor: colors.green },
@@ -194,6 +194,7 @@ export default function Chat() {
         <TextInput
           value={text}
           onChangeText={setText}
+          maxLength={500}
           placeholder="Ask about hours, prices, treks…"
           placeholderTextColor={colors.muted}
           accessibilityLabel="Message"

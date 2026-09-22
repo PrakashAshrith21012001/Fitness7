@@ -11,6 +11,7 @@ import { MEALS, useFood, type DraftItem } from "@/state/food";
 import { Chips } from "@/components/Pickers";
 import { Body, Card, LimeButton } from "@/components/ui";
 import { Screen } from "@/components/Screen";
+import { Kcal } from "@/components/Kcal";
 
 /**
  * Recent — the last 20 distinct things logged. Tap to tick, one button to
@@ -57,7 +58,7 @@ export default function RecentFood() {
         </Card>
       ) : (
         <>
-          <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8 }}>MEAL</Body>
+          <Body size="micro" style={{ marginBottom: 8 }}>Meal</Body>
           <Chips value={slot} options={MEALS} onChange={setSlot} />
           <View style={{ marginTop: 16, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, overflow: "hidden" }}>
             {recent.map((it, i) => {
@@ -77,9 +78,9 @@ export default function RecentFood() {
                   <Ionicons name={on ? "checkmark-circle" : "ellipse-outline"} size={22} color={on ? colors.green : colors.line} />
                   <View style={{ flex: 1 }}>
                     <Body size="body" muted={false} numberOfLines={1}>{it.name}</Body>
-                    <Body size="micro">{it.portionLabel.toUpperCase()}</Body>
+                    <Body size="micro">{it.portionLabel}</Body>
                   </View>
-                  {!hide ? <Body size="small" muted={false} style={{ fontWeight: "600" }}>{it.kcal}</Body> : null}
+                  {!hide ? <Kcal value={it.kcal} size="small" weight="600" /> : null}
                 </Pressable>
               );
             })}

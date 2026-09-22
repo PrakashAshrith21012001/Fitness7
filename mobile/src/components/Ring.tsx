@@ -1,5 +1,6 @@
 import { View, type StyleProp, type ViewStyle } from "react-native";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import Animated, { Easing, useAnimatedStyle, useDerivedValue, useSharedValue, withTiming } from "react-native-reanimated";
 import { useColors } from "@/theme/ThemeProvider";
 
 /**
@@ -30,41 +31,54 @@ export function Ring({
   const fill = color ?? colors.green;
   const bg = track ?? colors.surface2;
   const r = size / 2;
-  const deg = p * 360;
-  const rightDeg = Math.min(180, deg);
-  const leftDeg = Math.max(0, deg - 180);
+
+  // The sweep animates from wherever it was to the new value — 600 ms, eased out.
+  const deg = useSharedValue(p * 360);
+  useEffect(() => {
+    deg.value = withTiming(p * 360, { duration: 600, easing: Easing.out(Easing.cubic) });
+  }, [p, deg]);
+  const rightDeg = useDerivedValue(() => Math.min(180, deg.value));
+  const leftDeg = useDerivedValue(() => Math.max(0, deg.value - 180));
+  const rightStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${rightDeg.value - 135}deg` }], opacity: rightDeg.value > 0.5 ? 1 : 0 }));
+  const leftStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${45 + leftDeg.value}deg` }], opacity: leftDeg.value > 0.5 ? 1 : 0 }));
 
   /**
    * A circle whose top+right borders are coloured is, after a 45° turn, a
    * coloured right half. Clipped to one half of the ring and rotated further,
    * it sweeps: right half covers 0–180°, left half 180–360°.
    */
-  const half = (side: "left" | "right", degrees: number) => (
+  const half = (side: "left" | "right", animated: typeof rightStyle) => (
     <View pointerEvents="none" style={{ position: "absolute", top: 0, [side]: 0, width: r, height: size, overflow: "hidden" }}>
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          [side === "right" ? "left" : "right"]: -r,
-          width: size,
-          height: size,
-          borderRadius: r,
-          borderWidth: stroke,
-          borderTopColor: fill,
-          borderRightColor: fill,
-          borderBottomColor: "transparent",
-          borderLeftColor: "transparent",
-          transform: [{ rotate: `${side === "right" ? degrees - 135 : 45 + degrees}deg` }],
-        }}
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            top: 0,
+            [side === "right" ? "left" : "right"]: -r,
+            width: size,
+            height: size,
+            borderRadius: r,
+            borderWidth: stroke,
+            borderTopColor: fill,
+            borderRightColor: fill,
+            borderBottomColor: "transparent",
+            borderLeftColor: "transparent",
+          },
+          animated,
+        ]}
       />
     </View>
   );
 
   return (
     <View style={[{ width: size, height: size, alignItems: "center", justifyContent: "center" }, style]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(p * 100) }}>
+      {/* glow — only when there is progress to show */}
+      {p > 0 && fill === colors.green ? (
+        <View pointerEvents="none" style={{ position: "absolute", width: size, height: size, borderRadius: r, shadowColor: colors.green, shadowOpacity: 0.45, shadowRadius: size / 5, shadowOffset: { width: 0, height: 0 }, elevation: 0, backgroundColor: "transparent" }} />
+      ) : null}
       <View style={{ position: "absolute", width: size, height: size, borderRadius: r, borderWidth: stroke, borderColor: bg }} />
-      {rightDeg > 0 ? half("right", rightDeg) : null}
-      {leftDeg > 0 ? half("left", leftDeg) : null}
+      {half("right", rightStyle)}
+      {half("left", leftStyle)}
       <View style={{ alignItems: "center", justifyContent: "center" }}>{children}</View>
     </View>
   );
@@ -74,9 +88,14 @@ export function Ring({
 export function Bar({ progress, color, height = 6, style }: { progress: number; color?: string; height?: number; style?: StyleProp<ViewStyle> }) {
   const colors = useColors();
   const p = Math.max(0, Math.min(1, progress));
+  const w = useSharedValue(p);
+  useEffect(() => {
+    w.value = withTiming(p, { duration: 500, easing: Easing.out(Easing.cubic) });
+  }, [p, w]);
+  const a = useAnimatedStyle(() => ({ width: `${w.value * 100}%` }));
   return (
     <View style={[{ height, borderRadius: height / 2, backgroundColor: colors.surface2, overflow: "hidden" }, style]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(p * 100) }}>
-      <View style={{ width: `${p * 100}%`, height: "100%", backgroundColor: color ?? colors.green, borderRadius: height / 2 }} />
+      <Animated.View style={[{ height: "100%", backgroundColor: color ?? colors.green, borderRadius: height / 2 }, a]} />
     </View>
   );
 }

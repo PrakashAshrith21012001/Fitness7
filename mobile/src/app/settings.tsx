@@ -15,7 +15,7 @@ import { Chips, Segmented } from "@/components/Pickers";
 import { NumbersForm, type Numbers } from "@/components/NumbersForm";
 import { TargetCard } from "@/components/TargetCard";
 import { WaterGoalRow } from "@/components/WaterGoalRow";
-import { ensurePermission } from "@/lib/reminders";
+import { ensurePermission, remindersAvailable } from "@/lib/reminders";
 
 const goals: { id: Goal; label: string }[] = [
   { id: "strength", label: "Get stronger" },
@@ -40,20 +40,27 @@ export default function Settings() {
   const colors = useColors();
   const router = useRouter();
   const { pref, setTheme } = useTheme();
-  const { member, update, signOut } = useSession();
+  const { member, update, signOut, logWeight } = useSession();
   const [name, setName] = useState(member?.name ?? "");
+  const lastKg = member?.weights.length ? member.weights[member.weights.length - 1].kg : undefined;
   const [numbers, setNumbers] = useState<Numbers>({
-    heightCm: member?.heightCm, age: member?.age, sex: member?.sex, activity: member?.activity,
+    kg: lastKg, heightCm: member?.heightCm, age: member?.age, sex: member?.sex, activity: member?.activity,
   });
   useEffect(() => {
     if (member?.name) setName(member.name);
   }, [member?.name]);
+  useEffect(() => {
+    if (!member) return;
+    setNumbers((n) => ({ kg: n.kg ?? lastKg, heightCm: n.heightCm ?? member.heightCm, age: n.age ?? member.age, sex: n.sex ?? member.sex, activity: n.activity ?? member.activity }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member?.id, lastKg, member?.heightCm, member?.age, member?.sex, member?.activity]);
   if (!member) return null;
 
   const saveNumbers = (n: Numbers) => {
     setNumbers(n);
     const changed = n.heightCm !== member.heightCm || n.age !== member.age || n.sex !== member.sex || n.activity !== member.activity;
     if (changed) update({ heightCm: n.heightCm, age: n.age, sex: n.sex, activity: n.activity });
+    if (n.kg && n.kg !== lastKg) void logWeight(n.kg);
   };
 
   const toggle = (key: keyof typeof member.notifications) => (v: boolean) => {
@@ -88,13 +95,14 @@ export default function Settings() {
     <Screen title="Settings">
       <Group title="Profile">
         <View style={{ padding: 16 }}>
-          <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8 }}>
-            NAME
+          <Body size="micro" style={{ marginBottom: 8 }}>
+            Name
           </Body>
           <TextInput
             value={name}
-            onChangeText={setName}
-            onBlur={() => name.trim() && name.trim() !== member.name && update({ name: name.trim() })}
+            onChangeText={(v) => setName(v.replace(/\s{2,}/g, " ").slice(0, 40))}
+            onBlur={() => (name.trim().length >= 2 ? name.trim() !== member.name && update({ name: name.trim() }) : setName(member.name))}
+            maxLength={40}
             placeholder="Your name"
             placeholderTextColor={colors.muted}
             accessibilityLabel="Name"
@@ -116,21 +124,21 @@ export default function Settings() {
       <Group title="Training">
         <View style={{ padding: 16, gap: 14 }}>
           <View>
-            <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8 }}>
-              GOAL
+            <Body size="micro" style={{ marginBottom: 8 }}>
+              Goal
             </Body>
             <Chips value={member.goal ?? "general"} options={goals} onChange={(goal) => update({ goal })} />
           </View>
           <View>
-            <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8 }}>
-              PREFERRED SLOT
+            <Body size="micro" style={{ marginBottom: 8 }}>
+              Preferred slot
             </Body>
             <Chips value={member.slot ?? "evening"} options={slots} onChange={(slot) => update({ slot })} />
           </View>
         </View>
         <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.line }}>
           <Display size="h2" style={{ textTransform: "none", letterSpacing: -0.3 }}>Your numbers</Display>
-          <Body size="small" style={{ marginTop: 4, marginBottom: 16 }}>For the daily energy and protein target on the Food screen. Weight comes from Progress.</Body>
+          <Body size="small" style={{ marginTop: 4, marginBottom: 16 }}>For the daily energy and protein target on the Food screen. Weight here is today’s weigh-in — the same one Progress tracks.</Body>
           <NumbersForm value={numbers} onChange={saveNumbers} />
           <View style={{ marginTop: 16 }}>
             <TargetCard />
@@ -146,8 +154,11 @@ export default function Settings() {
       </Group>
 
       <Group title="Notifications">
+        {!remindersAvailable() ? (
+          <Row first icon="information-circle-outline" label="Reminders need the installed app" value="They don't run inside Expo Go — the store build has them." />
+        ) : null}
         <Row
-          first
+          first={remindersAvailable()}
           icon="restaurant-outline"
           label="Meal reminders"
           value="Only when a meal hasn't been logged — 9:30, 1:30, 9 pm"
@@ -243,8 +254,8 @@ export default function Settings() {
         />
       </Group>
 
-      <Body size="micro" style={{ textAlign: "center", marginTop: 24, letterSpacing: 1 }}>
-        FITNESS 7 GYM UNISEX · APP 1.0
+      <Body size="micro" style={{ textAlign: "center", marginTop: 24 }}>
+        FItness 7 gym unisex · App 1.0
       </Body>
     </Screen>
   );

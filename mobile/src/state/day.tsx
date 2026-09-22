@@ -57,7 +57,7 @@ function daysAgo(n: number) {
 }
 
 export function DayProvider({ children }: { children: ReactNode }) {
-  const { member } = useSession();
+  const { member, ready } = useSession();
   const memberId = member?.id ?? null;
   const [state, setState] = useState<DayState>({ water: {}, activities: [] });
   const ref = useRef<DayState>(state);
@@ -117,13 +117,15 @@ export function DayProvider({ children }: { children: ReactNode }) {
     };
   }, [memberId, persist]);
 
+  // Only once the session has actually loaded — before that, member is null
+  // for a moment and this used to wipe the log on every launch.
   useEffect(() => {
-    if (!memberId) {
+    if (ready && !memberId) {
       ref.current = { water: {}, activities: [] };
       setState({ water: {}, activities: [] });
       AsyncStorage.removeItem(KEY).catch(() => {});
     }
-  }, [memberId]);
+  }, [ready, memberId]);
 
   const push = useCallback(
     (op: Parameters<typeof enqueue>[1]) => {

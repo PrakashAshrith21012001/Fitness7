@@ -56,6 +56,9 @@ export default function Progress() {
   }).length;
 
   const valid = /^\d{2,3}(\.\d)?$/.test(kg) && Number(kg) >= 30 && Number(kg) <= 250;
+  const outOfRange = kg.length >= 2 && !valid && !kg.endsWith(".");
+  // A 5 kg swing since the last weigh-in is almost always a typo — say so, don't block.
+  const jump = valid && latest ? Math.abs(Number(kg) - latest.kg) : 0;
   const save = async () => {
     if (!valid) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -138,9 +141,7 @@ export default function Progress() {
                         width: "100%",
                         height: h,
                         borderRadius: 6,
-                        backgroundColor: last ? colors.green : colors.surface2,
-                        borderWidth: last ? 0 : 1,
-                        borderColor: colors.line,
+                        backgroundColor: last ? colors.green : colors.accentBorder,
                       }}
                     />
                   </View>
@@ -148,11 +149,11 @@ export default function Progress() {
               })}
             </View>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-              <Body size="micro">{shortDate(weights[0].date).toUpperCase()}</Body>
+              <Body size="micro">{shortDate(weights[0].date)}</Body>
               <Body size="micro">
                 {min}–{max} KG
               </Body>
-              <Body size="micro">{shortDate(weights[weights.length - 1].date).toUpperCase()}</Body>
+              <Body size="micro">{shortDate(weights[weights.length - 1].date)}</Body>
             </View>
           </View>
         ) : (
@@ -177,7 +178,7 @@ export default function Progress() {
           >
             <TextInput
               value={kg}
-              onChangeText={(v) => setKg(v.replace(/[^\d.]/g, "").slice(0, 5))}
+              onChangeText={(v) => { const [i, ...r] = v.replace(/,/g, ".").replace(/[^\d.]/g, "").split("."); setKg((r.length ? `${i}.${r.join("").slice(0, 1)}` : i).slice(0, 5)); }}
               keyboardType="decimal-pad"
               placeholder={latest ? String(latest.kg) : "72.5"}
               placeholderTextColor={colors.muted}
@@ -206,9 +207,11 @@ export default function Progress() {
             <Ionicons name="checkmark" size={24} color={colors.onAccent} />
           </Pressable>
         </View>
+        {outOfRange ? <Body size="micro" style={{ marginTop: 8, color: colors.danger }}>Enter a weight between 30 and 250 kg, e.g. 72.5</Body> : null}
+        {jump >= 5 ? <Body size="micro" style={{ marginTop: 8, color: colors.danger }}>That's {jump.toFixed(1)} kg from your last weigh-in — double-check before saving.</Body> : null}
         {member.weights.some((w) => w.date === today()) ? (
           <Body size="micro" style={{ marginTop: 8 }}>
-            LOGGED TODAY · SAVING AGAIN REPLACES IT
+            Logged today · Saving again replaces it
           </Body>
         ) : null}
       </Card>
@@ -260,11 +263,11 @@ export default function Progress() {
       <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
         <View style={{ flex: 1, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, paddingVertical: 14, alignItems: "center" }}>
           <Display size="h1" style={{ color: colors.lime }}>{weekMinutes}</Display>
-          <Body size="micro" style={{ marginTop: 4, textAlign: "center" }}>ACTIVE MIN · 7 DAYS</Body>
+          <Body size="micro" style={{ marginTop: 4, textAlign: "center" }}>Active min · 7 days</Body>
         </View>
         <View style={{ flex: 1, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, paddingVertical: 14, alignItems: "center" }}>
           <Display size="h1" style={{ color: colors.lime }}>{hideCal ? "—" : fmtKcal(weekBurn)}</Display>
-          <Body size="micro" style={{ marginTop: 4, textAlign: "center" }}>KCAL BURNED</Body>
+          <Body size="micro" style={{ marginTop: 4, textAlign: "center" }}>Kcal burned</Body>
         </View>
       </View>
 
@@ -280,14 +283,14 @@ export default function Progress() {
             return (
               <View key={d.iso} style={{ flex: 1, alignItems: "center", gap: 6 }}>
                 <View style={{ width: "100%", height: 40, borderRadius: 6, borderWidth: 1, borderColor: isToday ? colors.lime : colors.line, backgroundColor: colors.surface2, overflow: "hidden", justifyContent: "flex-end" }}>
-                  <View style={{ height: `${p * 100}%`, backgroundColor: p >= 1 ? colors.green : "rgba(46,204,113,0.45)" }} />
+                  <View style={{ height: `${p * 100}%`, backgroundColor: p >= 1 ? colors.green : colors.accentBorder }} />
                 </View>
                 <Body size="micro">{d.label}</Body>
               </View>
             );
           })}
         </View>
-        <Body size="micro" style={{ marginTop: 10 }}>{glassMl} ML GLASSES · FULL BAR = THE DAY'S GOAL</Body>
+        <Body size="micro" style={{ marginTop: 10 }}>{glassMl} ml glasses · a full bar is the day's goal</Body>
       </Card>
 
       <LimeButton label="Ask a coach about your numbers" icon="logo-whatsapp" variant="outline" href={wa.general()} style={{ marginTop: 16 }} />

@@ -171,8 +171,8 @@ export default function SnapFood() {
       )}
 
       {plate ? (
-        <View style={{ marginTop: 16, borderRadius: radius.md, borderWidth: 1, borderColor: "rgba(46,204,113,0.45)", backgroundColor: colors.limeSoft, padding: 12 }}>
-          <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 4 }}>WHAT IT SAW</Body>
+        <View style={{ marginTop: 16, borderRadius: radius.md, borderWidth: 1, borderColor: colors.accentBorder, backgroundColor: colors.limeSoft, padding: 12 }}>
+          <Body size="micro" style={{ marginBottom: 4 }}>What it saw</Body>
           <Body size="small" muted={false}>{plate}</Body>
         </View>
       ) : null}
@@ -187,7 +187,7 @@ export default function SnapFood() {
       {items?.length ? (
         <>
           <View style={{ marginTop: 18 }}>
-            <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8 }}>MEAL</Body>
+            <Body size="micro" style={{ marginBottom: 8 }}>Meal</Body>
             <Chips value={slot} options={MEALS} onChange={setSlot} />
           </View>
           <Body size="small" style={{ marginTop: 16 }}>Portions from a photo are estimates. Check the ones marked, adjust with the buttons, then add.</Body>

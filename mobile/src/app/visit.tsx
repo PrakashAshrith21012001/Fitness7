@@ -47,7 +47,7 @@ function Row({
     >
       <Ionicons name={icon} size={20} color={colors.lime} />
       <View style={{ flex: 1 }}>
-        <Body size="micro">{label.toUpperCase()}</Body>
+        <Body size="micro">{label}</Body>
         <Body size="small" style={{ color: colors.white, marginTop: 2 }}>
           {value}
         </Body>
@@ -159,7 +159,7 @@ export default function Visit() {
               {t.name}
             </Body>
             <Body size="micro" style={{ color: colors.lime, marginTop: 3 }}>
-              {t.role.toUpperCase()}
+              {t.role}
             </Body>
             <Body size="small" style={{ marginTop: 10 }}>
               {t.bio}

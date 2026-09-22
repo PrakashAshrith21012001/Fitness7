@@ -29,7 +29,7 @@ export function NudgeCard() {
       <Ionicons name={nudge.icon} size={18} color={colors.lime} />
       <View style={{ flex: 1 }}>
         <Body size="small" muted={false} style={{ fontWeight: "600" }}>{nudge.title}</Body>
-        <Body size="micro">{nudge.body.toUpperCase()}</Body>
+        <Body size="micro">{nudge.body}</Body>
       </View>
       <Ionicons name="chevron-forward" size={16} color={colors.muted} />
     </Pressable>

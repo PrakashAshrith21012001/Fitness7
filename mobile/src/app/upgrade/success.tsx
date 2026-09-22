@@ -68,8 +68,8 @@ export default function Success() {
       <Animated.View style={{ opacity: fade, marginTop: 28, gap: 12 }}>
         {plan ? (
           <Card>
-            <Body size="micro" style={{ letterSpacing: 1.4 }}>
-              YOUR PLAN
+            <Body size="micro" >
+              Your plan
             </Body>
             <Display size="h2" style={{ marginTop: 6 }}>
               {plan.name}

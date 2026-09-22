@@ -40,7 +40,7 @@ export default function Profile() {
   return (
     <ScrollView
       style={{ backgroundColor: colors.black }}
-      contentContainerStyle={{ paddingTop: insets.top + 16, paddingHorizontal: 20, paddingBottom: 40 }}
+      contentContainerStyle={{ paddingTop: insets.top + 16, paddingHorizontal: 20, paddingBottom: 112 }}
       showsVerticalScrollIndicator={false}
     >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -91,7 +91,7 @@ export default function Profile() {
             {member.phone ? prettyPhone(member.phone) : member.email ?? ""}
           </Body>
           <Body size="micro" style={{ marginTop: 4 }}>
-            MEMBER SINCE {longDate(member.joinedOn).toUpperCase()}
+            Member since {longDate(member.joinedOn)}
           </Body>
         </View>
       </View>

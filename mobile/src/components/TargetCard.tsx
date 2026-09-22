@@ -14,6 +14,12 @@ export function targetFor(m: Member | null): DailyTarget | null {
   return dailyTarget({ kg, heightCm: m.heightCm, age: m.age, sex: m.sex, activity: m.activity, goal: m.goal });
 }
 
+/** What's still needed for a target, in plain words. */
+export function missingNumbers(m: Member | null): string[] {
+  if (!m) return [];
+  return [!m.weights.length && "weight", !m.heightCm && "height", !m.age && "age", !m.sex && "sex", !m.activity && "training days"].filter(Boolean) as string[];
+}
+
 const goalWords: Record<NonNullable<Member["goal"]>, string> = {
   "fat-loss": "15 % below maintenance for steady fat loss",
   strength: "10 % above maintenance to build on",
@@ -37,7 +43,7 @@ export function TargetCard() {
 
   if (!t) {
     const missing = [
-      !hasWeight && "a weight on Progress",
+      !hasWeight && "weight",
       !member.heightCm && "height",
       !member.age && "age",
       !member.sex && "sex",
@@ -52,7 +58,7 @@ export function TargetCard() {
   }
 
   return (
-    <View style={{ borderRadius: radius.md, borderWidth: 1, borderColor: "rgba(46,204,113,0.45)", backgroundColor: colors.limeSoft, padding: 14 }}>
+    <View style={{ borderRadius: radius.md, borderWidth: 1, borderColor: colors.accentBorder, backgroundColor: colors.limeSoft, padding: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
         <Body size="title" muted={false} style={{ fontWeight: "700" }}>{fmtKcal(t.kcal)} kcal</Body>
         <Body size="small">· {t.proteinG} g protein a day</Body>

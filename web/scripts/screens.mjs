@@ -84,6 +84,17 @@ const shots = [
   ["activity", "/food/activity"],
   ["settings", "/settings"],
   ["progress", "/progress"],
+  ["classes", "/classes"],
+  ["treks", "/treks"],
+  ["membership", "/membership"],
+  ["profile", "/profile"],
+  ["trek-detail", "/trek/yercaud-oct-2026"],
+  ["class-detail", "/class/strength"],
+  ["checkin", "/checkin"],
+  ["visit", "/visit"],
+  ["chat", "/chat"],
+  ["login", "/login"],
+  ["onboarding", "/onboarding"],
 ];
 const results = [];
 for (const theme of ["dark", "light"]) {

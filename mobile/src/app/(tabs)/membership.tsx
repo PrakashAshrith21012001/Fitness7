@@ -19,7 +19,7 @@ export default function Membership() {
       contentContainerStyle={{
         paddingTop: insets.top + 20,
         paddingHorizontal: 20,
-        paddingBottom: 40,
+        paddingBottom: 112,
       }}
       showsVerticalScrollIndicator={false}
     >
@@ -33,8 +33,8 @@ export default function Membership() {
         {plans.map((plan) => (
           <Card key={plan.id} accent={plan.highlight}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Body size="micro" style={{ color: colors.white, letterSpacing: 1.6 }}>
-                {plan.name.toUpperCase()}
+              <Body size="micro" style={{ color: colors.white }}>
+                {plan.name}
               </Body>
               {member?.plan?.id === plan.id ? <Pill label="Current" tone="lime" /> : plan.badge ? <Pill label={plan.badge} tone={plan.highlight ? "lime" : "muted"} /> : null}
             </View>
@@ -47,7 +47,7 @@ export default function Membership() {
                 </Body>
               ) : null}
             </View>
-            <Body size="micro" style={{ marginTop: 2 }}>{plan.period.toUpperCase()}</Body>
+            <Body size="micro" style={{ marginTop: 2 }}>{plan.period}</Body>
 
             <Body size="small" style={{ marginTop: 12 }}>{plan.summary}</Body>
 
@@ -67,7 +67,8 @@ export default function Membership() {
             <LimeButton
               label={member?.plan?.id === plan.id ? "Your current plan" : `Choose ${plan.name}`}
               icon={member?.plan?.id === plan.id ? "checkmark-circle" : "arrow-forward"}
-              variant={plan.highlight && member?.plan?.id !== plan.id ? "lime" : "outline"}
+              variant={member?.plan?.id === plan.id ? "soft" : "lime"}
+              trailing={member?.plan?.id !== plan.id}
               onPress={() => member?.plan?.id !== plan.id && router.push({ pathname: "/upgrade/[plan]", params: { plan: plan.id } })}
               style={{ marginTop: 18 }}
             />

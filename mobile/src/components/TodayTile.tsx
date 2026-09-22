@@ -37,13 +37,15 @@ export function TodayTile() {
   const line = hide
     ? t.count ? `${t.count} item${t.count === 1 ? "" : "s"} logged` : "Log what you ate"
     : nothing ? "Log what you ate"
-      : `${fmtKcal(t.kcal)} eaten · ${fmtKcal(burn)} burned`;
+      : budget !== null
+        ? `${fmtKcal(t.kcal)} / ${fmtKcal(budget)} kcal`
+        : `${fmtKcal(t.kcal)} eaten · ${fmtKcal(burn)} burned`;
   const sub = nothing
     ? `Type it, snap the plate, or tap a glass · ${glasses}`
     : hide
       ? glasses
       : left !== null
-        ? `${left < 0 ? "Above target today" : `${fmtKcal(left)} left`} · ${glasses}`
+        ? `${left < 0 ? `${fmtKcal(-left)} over` : `${fmtKcal(left)} left`}${burn ? ` · ${fmtKcal(burn)} burned` : ""} · ${glasses}`
         : `${glasses} · add your numbers for a budget`;
 
   return (

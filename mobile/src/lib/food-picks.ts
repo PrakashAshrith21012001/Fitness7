@@ -92,7 +92,7 @@ export function draftsFromCombo(combo: Combo): DraftItem[] {
 }
 
 export function portionLabel(f: Food, grams: number): string {
-  const n = Math.round((grams / f.portion.grams) * 10) / 10;
+  const n = f.unit === "piece" ? Math.round((grams / f.portion.grams) * 2) / 2 : Math.round((grams / f.portion.grams) * 10) / 10;
   if (f.unit === "piece") return `${n} × ${f.portion.label.replace(/^1 /, "")}`;
   if (n === 1) return f.portion.label;
   return `${grams} ${f.category === "drink" ? "ml" : "g"}`;

@@ -71,7 +71,13 @@ type Ctx = {
   parseText: (text: string, opts?: { allowApi?: boolean }) => Promise<ParseResponse>;
   analysePhoto: (imageBase64: string, hint?: string) => Promise<ParseResponse>;
   defaultSlot: () => MealSlot;
+  /** The last save, for the "Added to lunch · Undo" toast. Cleared by dismissSaved or undoSaved. */
+  lastSaved: SavedNote | null;
+  dismissSaved: () => void;
+  undoSaved: () => Promise<void>;
 };
+
+export type SavedNote = { ids: string[]; meal: MealSlot; kcal: number; count: number; at: number };
 
 const KEY = "f7-food";
 const KEEP_DAYS = 60;
@@ -121,9 +127,10 @@ function daysAgo(n: number) {
 }
 
 export function FoodProvider({ children }: { children: ReactNode }) {
-  const { member } = useSession();
+  const { member, ready } = useSession();
   const memberId = member?.id ?? null;
   const [entries, setEntries] = useState<FoodEntry[]>([]);
+  const [lastSaved, setLastSaved] = useState<SavedNote | null>(null);
   const ref = useRef<FoodEntry[]>([]);
   ref.current = entries;
 
@@ -175,13 +182,15 @@ export function FoodProvider({ children }: { children: ReactNode }) {
   }, [memberId, persist]);
 
   // signed out → forget the log on this phone
+  // Only once the session has actually loaded — before that, member is null
+  // for a moment and this used to wipe the log on every launch.
   useEffect(() => {
-    if (!memberId) {
+    if (ready && !memberId) {
       ref.current = [];
       setEntries([]);
       AsyncStorage.removeItem(KEY).catch(() => {});
     }
-  }, [memberId]);
+  }, [ready, memberId]);
 
   const push = useCallback(
     (op: Parameters<typeof enqueue>[1]) => {
@@ -213,6 +222,7 @@ export function FoodProvider({ children }: { children: ReactNode }) {
       }));
       await persist([...ref.current, ...fresh]);
       for (const e of fresh) push({ kind: "food.add", row: toRow(e) });
+      setLastSaved({ ids: fresh.map((e) => e.id), meal, kcal: fresh.reduce((a, b) => a + b.kcal, 0), count: fresh.length, at: Date.now() });
     },
     [persist, push],
   );
@@ -224,6 +234,16 @@ export function FoodProvider({ children }: { children: ReactNode }) {
     },
     [persist, push],
   );
+
+  const dismissSaved = useCallback(() => setLastSaved(null), []);
+  const undoSaved = useCallback(async () => {
+    const note = lastSaved;
+    setLastSaved(null);
+    if (!note) return;
+    const gone = new Set(note.ids);
+    await persist(ref.current.filter((e) => !gone.has(e.id)));
+    for (const id of note.ids) push({ kind: "food.remove", id });
+  }, [lastSaved, persist, push]);
 
   const forDate = useCallback((date: string) => entries.filter((e) => e.date === date), [entries]);
 
@@ -306,8 +326,8 @@ export function FoodProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<Ctx>(
-    () => ({ entries, forDate, totals, addItems, remove, recent, parseText, analysePhoto, defaultSlot }),
-    [entries, forDate, totals, addItems, remove, recent, parseText, analysePhoto, defaultSlot],
+    () => ({ entries, forDate, totals, addItems, remove, recent, parseText, analysePhoto, defaultSlot, lastSaved, dismissSaved, undoSaved }),
+    [entries, forDate, totals, addItems, remove, recent, parseText, analysePhoto, defaultSlot, lastSaved, dismissSaved, undoSaved],
   );
   return <FoodCtx.Provider value={value}>{children}</FoodCtx.Provider>;
 }

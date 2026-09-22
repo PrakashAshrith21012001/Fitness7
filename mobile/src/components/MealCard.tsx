@@ -2,18 +2,22 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { fmtKcal, type MealSlot } from "@f7/content";
 import { radius } from "@/theme";
-import { useColors } from "@/theme/ThemeProvider";
+import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { Body } from "@/components/ui";
+import { PressScale, elevation } from "@/components/motion";
 import type { FoodEntry } from "@/state/food";
+import { Kcal } from "@/components/Kcal";
+
+/** How a day's budget is usually split — a guide, not a rule. Sums to 1. */
+export const MEAL_SHARE: Record<MealSlot, number> = { breakfast: 0.25, lunch: 0.35, snacks: 0.1, dinner: 0.3 };
 
 const META: Record<MealSlot, { icon: keyof typeof Ionicons.glyphMap; hint: string; share: number }> = {
-  breakfast: { icon: "sunny-outline", hint: "Idli, dosa, pongal…", share: 0.25 },
-  lunch: { icon: "restaurant-outline", hint: "Meals, biryani, curd rice…", share: 0.35 },
-  snacks: { icon: "cafe-outline", hint: "Tea, sundal, fruit…", share: 0.1 },
-  dinner: { icon: "moon-outline", hint: "Chapati, dosa, rice…", share: 0.3 },
+  breakfast: { icon: "sunny-outline", hint: "Idli, dosa, pongal…", share: MEAL_SHARE.breakfast },
+  lunch: { icon: "restaurant-outline", hint: "Meals, biryani, curd rice…", share: MEAL_SHARE.lunch },
+  snacks: { icon: "cafe-outline", hint: "Tea, sundal, fruit…", share: MEAL_SHARE.snacks },
+  dinner: { icon: "moon-outline", hint: "Chapati, dosa, rice…", share: MEAL_SHARE.dinner },
 };
 
 /**
@@ -23,6 +27,8 @@ const META: Record<MealSlot, { icon: keyof typeof Ionicons.glyphMap; hint: strin
  */
 export function MealCard({ slot, label, entries, target, hideCalories, onRemove }: { slot: MealSlot; label: string; entries: FoodEntry[]; target: number | null; hideCalories?: boolean; onRemove: (id: string) => void }) {
   const colors = useColors();
+  const { theme } = useTheme();
+  const dark = theme === "dark";
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const m = META[slot];
@@ -32,7 +38,7 @@ export function MealCard({ slot, label, entries, target, hideCalories, onRemove 
   const filled = entries.length > 0;
 
   return (
-    <View style={{ borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, overflow: "hidden" }}>
+    <View style={[{ borderRadius: radius.lg, borderWidth: dark ? 1 : 0, borderColor: colors.line, backgroundColor: colors.surface, overflow: "hidden" }, elevation(dark)]}>
       <Pressable
         onPress={() => filled && setOpen((o) => !o)}
         accessibilityRole={filled ? "button" : undefined}
@@ -45,28 +51,26 @@ export function MealCard({ slot, label, entries, target, hideCalories, onRemove 
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
             <Body size="title" muted={false} style={{ fontWeight: "700" }}>{label}</Body>
-            {!hideCalories && guide && !filled ? <Body size="micro">~{fmtKcal(guide)} KCAL</Body> : null}
+            {!hideCalories && guide && !filled ? <Body size="micro">aim ~{fmtKcal(guide)} kcal</Body> : null}
           </View>
           <Body size="small" numberOfLines={1} style={{ marginTop: 2 }}>{filled ? names : m.hint}</Body>
         </View>
         {filled && !hideCalories ? (
           <View style={{ alignItems: "flex-end" }}>
-            <Body size="title" muted={false} style={{ fontWeight: "700" }}>{fmtKcal(kcal)}</Body>
-            <Body size="micro">KCAL</Body>
+            <Kcal value={kcal} size="title" color={guide && kcal > guide * 1.15 ? colors.danger : undefined} />
+            {guide ? <Body size="micro">of {fmtKcal(guide)}</Body> : null}
           </View>
         ) : null}
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-            router.push({ pathname: "/food/add", params: { meal: slot } });
-          }}
+        <PressScale
+          onPress={() => router.push({ pathname: "/food/add", params: { meal: slot } })}
           accessibilityRole="button"
           accessibilityLabel={`Add to ${label}`}
           hitSlop={6}
-          style={({ pressed }) => [{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.green, alignItems: "center", justifyContent: "center" }, pressed && { transform: [{ scale: 0.94 }] }]}
+          scale={0.9}
+          style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: colors.green, alignItems: "center", justifyContent: "center", shadowColor: colors.green, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}
         >
           <Ionicons name="add" size={22} color={colors.onAccent} />
-        </Pressable>
+        </PressScale>
       </Pressable>
       {open && filled ? (
         <View style={{ borderTopWidth: 1, borderTopColor: colors.line, paddingHorizontal: 16, paddingVertical: 4 }}>
@@ -74,9 +78,9 @@ export function MealCard({ slot, label, entries, target, hideCalories, onRemove 
             <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 48 }}>
               <View style={{ flex: 1 }}>
                 <Body size="body" muted={false} numberOfLines={1}>{e.name}</Body>
-                <Body size="micro">{(e.portionLabel ?? `${e.grams} g`).toUpperCase()}{e.confidence < 0.85 ? " · ESTIMATE" : ""}</Body>
+                <Body size="micro">{(e.portionLabel ?? `${e.grams} g`)}{e.confidence < 0.85 ? " · estimate" : ""}</Body>
               </View>
-              {!hideCalories ? <Body size="small" muted={false} style={{ fontWeight: "600" }}>{e.kcal}</Body> : null}
+              {!hideCalories ? <Kcal value={e.kcal} size="small" weight="600" /> : null}
               <Pressable onPress={() => onRemove(e.id)} accessibilityRole="button" accessibilityLabel={`Remove ${e.name}`} hitSlop={8} style={{ width: 36, height: 36, alignItems: "center", justifyContent: "center" }}>
                 <Ionicons name="close" size={16} color={colors.muted} />
               </Pressable>

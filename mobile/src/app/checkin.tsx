@@ -80,7 +80,7 @@ export default function CheckIn() {
               borderRadius: radius.lg,
               backgroundColor: colors.limeSoft,
               borderWidth: 1,
-              borderColor: "rgba(46,204,113,0.45)",
+              borderColor: colors.accentBorder,
               padding: 20,
               flexDirection: "row",
               alignItems: "center",

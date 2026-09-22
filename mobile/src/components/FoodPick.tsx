@@ -2,8 +2,10 @@ import { Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { radius } from "@/theme";
-import { useColors } from "@/theme/ThemeProvider";
+import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { Body } from "@/components/ui";
+import { PressScale, elevation } from "@/components/motion";
+import { Kcal } from "@/components/Kcal";
 
 /**
  * Pickable food, two shapes. Tile — a square card for the shelves and
@@ -21,13 +23,6 @@ type Props = {
   onAdd: () => void;
 };
 
-function useAdd(onAdd: () => void) {
-  return () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    onAdd();
-  };
-}
-
 function PlusBadge({ count }: { count: number }) {
   const colors = useColors();
   const on = count > 0;
@@ -44,15 +39,17 @@ function PlusBadge({ count }: { count: number }) {
 
 export function FoodTile({ name, detail, kcal, icon, count = 0, onAdd }: Props) {
   const colors = useColors();
-  const add = useAdd(onAdd);
+  const { theme } = useTheme();
+  const dark = theme === "dark";
   return (
-    <Pressable
-      onPress={add}
+    <PressScale
+      onPress={onAdd}
+      scale={0.96}
       accessibilityRole="button"
       accessibilityLabel={`Add ${name}, ${detail}${kcal != null ? `, ${kcal} kcal` : ""}`}
-      style={({ pressed }) => [
-        { width: 148, borderRadius: radius.lg, borderWidth: 1, borderColor: count ? "rgba(46,204,113,0.45)" : colors.line, backgroundColor: count ? colors.limeSoft : colors.surface, padding: 14, minHeight: 150, justifyContent: "space-between" },
-        pressed && { transform: [{ scale: 0.98 }] },
+      style={[
+        { width: 148, borderRadius: radius.lg, borderWidth: dark || count ? 1 : 0, borderColor: count ? colors.accentBorder : colors.line, backgroundColor: count ? colors.limeSoft : colors.surface, padding: 14, minHeight: 150, justifyContent: "space-between" },
+        elevation(dark),
       ]}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -64,19 +61,21 @@ export function FoodTile({ name, detail, kcal, icon, count = 0, onAdd }: Props) 
       <View style={{ marginTop: 14 }}>
         <Body size="body" muted={false} style={{ fontWeight: "600" }} numberOfLines={2}>{name}</Body>
         <Body size="micro" style={{ marginTop: 3 }} numberOfLines={1}>
-          {detail.toUpperCase()}{kcal != null ? ` · ${kcal}` : ""}
+          {detail}{kcal != null ? ` · ${kcal} kcal` : ""}
         </Body>
       </View>
-    </Pressable>
+    </PressScale>
   );
 }
 
 export function FoodLine({ name, detail, kcal, icon, count = 0, onAdd, first }: Props & { first?: boolean }) {
   const colors = useColors();
-  const add = useAdd(onAdd);
   return (
     <Pressable
-      onPress={add}
+      onPress={() => {
+        Haptics.selectionAsync().catch(() => {});
+        onAdd();
+      }}
       accessibilityRole="button"
       accessibilityLabel={`Add ${name}, ${detail}${kcal != null ? `, ${kcal} kcal` : ""}`}
       style={({ pressed }) => [
@@ -89,9 +88,9 @@ export function FoodLine({ name, detail, kcal, icon, count = 0, onAdd, first }: 
       </View>
       <View style={{ flex: 1 }}>
         <Body size="body" muted={false} style={{ fontWeight: "600" }} numberOfLines={1}>{name}</Body>
-        <Body size="micro" numberOfLines={1}>{detail.toUpperCase()}</Body>
+        <Body size="micro" numberOfLines={1}>{detail}</Body>
       </View>
-      {kcal != null ? <Body size="small" muted={false} style={{ fontWeight: "600" }}>{kcal}</Body> : null}
+      {kcal != null ? <Kcal value={kcal} size="small" weight="600" /> : null}
       <PlusBadge count={count} />
     </Pressable>
   );

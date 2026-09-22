@@ -125,7 +125,13 @@ export function NumberField({
     >
       <TextInput
         value={value}
-        onChangeText={(v) => onChange((decimal ? v.replace(/[^\d.]/g, "") : v.replace(/\D/g, "")).slice(0, maxLen))}
+        onChangeText={(v) => {
+          if (!decimal) return onChange(v.replace(/\D/g, "").slice(0, maxLen));
+          // digits and one dot, at most one decimal place ("72.5", not "7..5" or "72.55")
+          const [int, ...rest] = v.replace(/,/g, ".").replace(/[^\d.]/g, "").split(".");
+          const frac = rest.join("").slice(0, 1);
+          onChange((rest.length ? `${int}.${frac}` : int).slice(0, maxLen));
+        }}
         keyboardType={decimal ? "decimal-pad" : "number-pad"}
         placeholder={placeholder}
         placeholderTextColor={colors.muted}

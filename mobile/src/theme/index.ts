@@ -9,34 +9,32 @@ export const font = {
    * platform's heaviest condensed face so the app ships with no font files
    * and no flash of unstyled text.
    */
+  // Sentence-case, semibold, tight — the reference apps' headline voice.
   display: Platform.select({
-    ios: "Impact",
-    android: "sans-serif-condensed",
-    default: "sans-serif-condensed",
+    ios: "System",
+    android: "sans-serif-medium",
+    default: "system-ui",
   }),
-  displayWeight: Platform.select({
-    ios: "400",
-    android: "900",
-    default: "900",
-  }) as "400" | "900",
+  displayWeight: "600" as "400" | "600" | "900",
 };
 
 export const type = {
-  hero: { fontSize: 40, lineHeight: 42, letterSpacing: -1.2 },
-  h1: { fontSize: 30, lineHeight: 34, letterSpacing: -0.8 },
+  hero: { fontSize: 36, lineHeight: 40, letterSpacing: -0.8 },
+  h1: { fontSize: 28, lineHeight: 33, letterSpacing: -0.6 },
   h2: { fontSize: 22, lineHeight: 27, letterSpacing: -0.4 },
   title: { fontSize: 17, lineHeight: 23, letterSpacing: -0.2 },
-  body: { fontSize: 15, lineHeight: 23 },
-  small: { fontSize: 13, lineHeight: 19 },
-  micro: { fontSize: 11, lineHeight: 15, letterSpacing: 0.6 },
+  body: { fontSize: 15, lineHeight: 22 },
+  small: { fontSize: 13, lineHeight: 18 },
+  micro: { fontSize: 12, lineHeight: 16, letterSpacing: 0 },
 } as const;
 
 export const shadow = {
+  /** Primary button lift — neutral, not a coloured glow */
   lime: {
-    shadowColor: colors.lime,
-    shadowOpacity: 0.45,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 5,
   },
 } as const;

@@ -1,0 +1,63 @@
+import { chromium } from "playwright";
+import { createServer } from "node:http";
+import { readFile, stat } from "node:fs/promises";
+import path from "node:path";
+const dist = "/home/claude/Fitness7/mobile/dist";
+const types = { ".html": "text/html", ".js": "text/javascript", ".png": "image/png", ".jpg": "image/jpeg", ".mp4": "video/mp4", ".ttf": "font/ttf" };
+const server = createServer(async (req, res) => {
+  const url = decodeURIComponent((req.url ?? "/").split("?")[0]);
+  for (const p of [path.join(dist, url), path.join(dist, url + ".html"), path.join(dist, url, "index.html"), path.join(dist, "index.html")]) {
+    try { if ((await stat(p)).isFile()) { res.writeHead(200, { "content-type": types[path.extname(p)] ?? "application/octet-stream" }); res.end(await readFile(p)); return; } } catch {}
+  }
+  res.writeHead(404).end();
+});
+await new Promise((r) => server.listen(4175, r));
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const member = { id: "local-demo", name: "Praki Ashrith", phone: "+919620273116", provider: "phone", plan: { id: "quarterly", name: "Quarterly", renewsOn: "2026-11-01" }, joinedOn: "2026-05-25", onboarded: true, treksDone: 2, streakWeeks: 3, notifications: { classes: true, treks: true, renewals: true, meals: true, water: true }, checkins: [iso(new Date())], weights: [], followed: [], reserved: [], glassMl: 250 };
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: "dark" });
+await ctx.addInitScript((m) => { localStorage.setItem("f7-session", JSON.stringify(m)); localStorage.setItem("f7-theme", "dark"); }, member);
+const page = await ctx.newPage();
+const errs = [];
+page.on("pageerror", (e) => errs.push("PAGEERROR " + e.message));
+page.on("console", (m) => { if (m.type() === "error" && !/TUNNEL|net::/.test(m.text())) errs.push("CONSOLE " + m.text().slice(0, 200)); });
+const out = "/tmp/claude-0/-home-claude/a11507e9-82c1-51ad-9a4b-1cfc1e237a82/scratchpad/flow";
+await (await import("node:fs/promises")).mkdir(out, { recursive: true });
+const step = async (name, fn) => { try { await fn(); } catch (e) { errs.push(`STEP ${name}: ${e.message.slice(0, 200)}`); } await page.waitForTimeout(900); await page.screenshot({ path: `${out}/${name}.png` }); console.log("step", name, page.url()); };
+
+await page.goto("http://localhost:4175/fitness", { waitUntil: "networkidle" });
+await page.waitForTimeout(1500);
+await step("01-fitness", async () => {});
+await step("02-tap-slot", async () => { const chips = page.getByText(/^\d{1,2}:\d{2}(AM|PM)$/).filter({ hasNot: page.locator("text=WAITLIST") }); await chips.first().click(); });
+await step("03-booking", async () => {});
+await step("04-reminder", async () => { await page.getByText("Other").first().click(); });
+await step("05-wod", async () => { await page.getByText(/^(Back|Arms|Legs|Chest|Shoulders|Core)$/).first().click(); });
+await step("06-exercise", async () => { await page.getByText(/Biceps Curl|Lat Pulldown|Goblet Squat|Push-ups|Overhead Press|Plank/).first().click(); });
+await step("07-next-ex", async () => { await page.getByText(/NEXT EXERCISE/i).first().click(); });
+await step("08-close", async () => { await page.goBack(); await page.waitForTimeout(500); });
+await step("09-mark", async () => { await page.getByText(/MARK ATTENDANCE/i).first().click(); });
+await page.goto("http://localhost:4175/store", { waitUntil: "networkidle" });
+await page.waitForTimeout(1500);
+await step("10-store", async () => {});
+await step("11-add", async () => { await page.getByText(/^ADD$/).first().click(); await page.getByText(/^ADD$/).first().click(); });
+await step("12-cartpill", async () => { await page.getByText(/^Cart$/).first().click(); });
+await step("13-cart", async () => {});
+await step("14-tip", async () => { await page.getByText(/^₹35$/).first().click(); });
+await step("15-paynow", async () => { await page.getByText(/^Pay Now$/).first().click(); });
+await page.waitForTimeout(3000);
+await step("16-gpay", async () => {});
+await step("17-pay", async () => { const b = page.getByText(/^Pay ₹/).first(); if (await b.count()) await b.click(); });
+await page.waitForTimeout(2600);
+await step("18-result", async () => {});
+await step("19-place", async () => { const b = page.getByText(/Place Order Now/i).first(); if (await b.count()) await b.click(); });
+await page.waitForTimeout(1500);
+await step("20-success", async () => {});
+await page.goto("http://localhost:4175/plan", { waitUntil: "networkidle" });
+await page.waitForTimeout(1200);
+await step("21-plan", async () => { await page.getByText(/^NEXT$/).first().click(); });
+await step("22-q1", async () => { await page.getByText(/^Male$/).first().click(); await page.getByText(/^NEXT$/).first().click(); });
+await step("23-q2", async () => { await page.locator("input").first().fill("28"); await page.getByText(/^NEXT$/).first().click(); });
+await step("24-q3", async () => { for (let i = 0; i < 5; i++) { const opts = page.locator("[role=radio], [role=button]").filter({ hasText: /Lose weight|Just starting|4 days|Arms|At Fitness 7/ }); if (await opts.count()) await opts.first().click(); const n = page.getByText(/^(NEXT|BUILD MY PLAN)$/).first(); await n.click(); await page.waitForTimeout(400); } });
+await step("25-result", async () => {});
+console.log(errs.join("\n") || "NO ERRORS");
+await browser.close(); server.close();

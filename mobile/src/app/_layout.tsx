@@ -7,6 +7,9 @@ import { SessionProvider, useSession } from "@/state/session";
 import { FoodProvider } from "@/state/food";
 import { DayProvider } from "@/state/day";
 import { ContentProvider } from "@/state/content";
+import { BookingsProvider } from "@/state/bookings";
+import { CartProvider } from "@/state/cart";
+import { SavedToast } from "@/components/SavedToast";
 import { Reminders } from "@/components/Reminders";
 
 /**
@@ -36,6 +39,9 @@ function Gate() {
     }
   }, [ready, member, segments, router]);
 
+  const slide = { animation: "slide_from_right" as const };
+  const modal = { presentation: "modal" as const, animation: "slide_from_bottom" as const };
+
   return (
     <>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
@@ -50,20 +56,37 @@ function Gate() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="trek/[id]" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="settings" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="visit" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="chat" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
-        <Stack.Screen name="checkin" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
-        <Stack.Screen name="progress" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="upgrade/[plan]" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+        <Stack.Screen name="trek/[id]" options={slide} />
+        <Stack.Screen name="class/[id]" options={slide} />
+        <Stack.Screen name="booking/[id]" options={slide} />
+        <Stack.Screen name="exercise/[id]" options={{ presentation: "fullScreenModal", animation: "fade" }} />
+        <Stack.Screen name="activities/index" options={slide} />
+        <Stack.Screen name="activities/memories" options={slide} />
+        <Stack.Screen name="activities/memory" options={{ presentation: "fullScreenModal", animation: "fade" }} />
+        <Stack.Screen name="plan/index" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
+        <Stack.Screen name="plan/result" options={slide} />
+        <Stack.Screen name="store/category/[id]" options={slide} />
+        <Stack.Screen name="store/product/[id]" options={slide} />
+        <Stack.Screen name="store/cart" options={slide} />
+        <Stack.Screen name="store/pay" options={{ presentation: "fullScreenModal", animation: "fade" }} />
+        <Stack.Screen name="store/account" options={slide} />
+        <Stack.Screen name="store/menu" options={{ presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
+        <Stack.Screen name="store/express" options={slide} />
+        <Stack.Screen name="store/orders" options={slide} />
+        <Stack.Screen name="settings" options={slide} />
+        <Stack.Screen name="visit" options={slide} />
+        <Stack.Screen name="chat" options={modal} />
+        <Stack.Screen name="checkin" options={modal} />
+        <Stack.Screen name="progress" options={slide} />
+        <Stack.Screen name="upgrade/[plan]" options={modal} />
         <Stack.Screen name="upgrade/success" options={{ animation: "fade" }} />
-        <Stack.Screen name="food/index" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="food/add" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
-        <Stack.Screen name="food/snap" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
-        <Stack.Screen name="food/recent" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
-        <Stack.Screen name="food/activity" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+        <Stack.Screen name="food/index" options={slide} />
+        <Stack.Screen name="food/add" options={modal} />
+        <Stack.Screen name="food/snap" options={modal} />
+        <Stack.Screen name="food/recent" options={modal} />
+        <Stack.Screen name="food/activity" options={modal} />
       </Stack>
+      <SavedToast />
     </>
   );
 }
@@ -76,8 +99,12 @@ export default function RootLayout() {
           <FoodProvider>
             <DayProvider>
               <ContentProvider>
-                <Reminders />
-                <Gate />
+                <BookingsProvider>
+                  <CartProvider>
+                    <Reminders />
+                    <Gate />
+                  </CartProvider>
+                </BookingsProvider>
               </ContentProvider>
             </DayProvider>
           </FoodProvider>

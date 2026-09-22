@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { radius } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { Body, Display } from "@/components/ui";
+import { Glass } from "@/components/motion";
 
 /**
  * Stack-screen chrome: a 44pt back target on the left (Fitts), the title,
@@ -37,26 +38,10 @@ export function ScreenHeader({
         gap: 8,
       }}
     >
-      <Pressable
-        onPress={back}
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        hitSlop={8}
-        style={({ pressed }) => [
-          {
-            width: 44,
-            height: 44,
-            borderRadius: radius.pill,
-            alignItems: "center",
-            justifyContent: "center",
-            borderWidth: 1,
-            borderColor: colors.line,
-            backgroundColor: colors.surface,
-          },
-          pressed && { borderColor: colors.green },
-        ]}
-      >
-        <Ionicons name="chevron-back" size={20} color={colors.white} />
+      <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" hitSlop={8} style={({ pressed }) => [pressed && { opacity: 0.7 }]}>
+        <Glass strength="regular" intensity={40} radius={22} style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
+          <Ionicons name="chevron-back" size={20} color={colors.white} />
+        </Glass>
       </Pressable>
       <View style={{ flex: 1 }}>
         {title ? (
@@ -164,8 +149,8 @@ export function Group({ title, children }: { title?: string; children: ReactNode
   return (
     <View style={{ marginTop: 22 }}>
       {title ? (
-        <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8, marginLeft: 4 }}>
-          {title.toUpperCase()}
+        <Body size="small" style={{ fontWeight: "600", marginBottom: 8, marginLeft: 4 }}>
+          {title}
         </Body>
       ) : null}
       <View

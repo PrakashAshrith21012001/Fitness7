@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
-import * as Notifications from "expo-notifications";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type * as NotificationsModule from "expo-notifications";
 
 /**
  * Local reminders — no server, no push.
@@ -28,12 +29,48 @@ export type ReminderInput = {
 const ASKED_KEY = "f7-notif-asked";
 const CHANNEL = "reminders";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowAlert: true, shouldPlaySound: false, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }),
-});
+/**
+ * expo-notifications throws the moment it is imported inside Expo Go on
+ * Android (SDK 53+ removed it there), and that would take down every screen
+ * that imports this file. So it is required lazily, and only outside Expo
+ * Go. In Expo Go the app simply has no reminders; a dev/store build has them.
+ */
+type N = typeof NotificationsModule;
+let mod: N | null | undefined;
+
+function notifications(): N | null {
+  if (mod !== undefined) return mod;
+  mod = null;
+  if (Platform.OS === "web" || Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return mod;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const m = require("expo-notifications") as N;
+    m.setNotificationHandler({
+      handleNotification: async () => ({ shouldShowAlert: true, shouldPlaySound: false, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }),
+    });
+    mod = m;
+  } catch {
+    mod = null;
+  }
+  return mod;
+}
+
+export const remindersAvailable = () => notifications() !== null;
+
+/** Tap on a reminder → open the screen it points at. No-op where notifications aren't available. */
+export function onReminderTap(handler: (url: string) => void): () => void {
+  const N = notifications();
+  if (!N) return () => {};
+  const sub = N.addNotificationResponseReceivedListener((res) => {
+    const url = res.notification.request.content.data?.url;
+    if (typeof url === "string") handler(url);
+  });
+  return () => sub.remove();
+}
 
 export async function ensureChannel() {
-  if (Platform.OS !== "android") return;
+  const Notifications = notifications();
+  if (Platform.OS !== "android" || !Notifications) return;
   await Notifications.setNotificationChannelAsync(CHANNEL, {
     name: "Reminders",
     importance: Notifications.AndroidImportance.DEFAULT,
@@ -44,7 +81,8 @@ export async function ensureChannel() {
 
 /** Ask once, the first time reminders are relevant; returns whether we may notify. */
 export async function ensurePermission(askIfNeeded: boolean): Promise<boolean> {
-  if (Platform.OS === "web") return false;
+  const Notifications = notifications();
+  if (!Notifications) return false;
   try {
     const cur = await Notifications.getPermissionsAsync();
     if (cur.granted) return true;
@@ -101,7 +139,8 @@ let last = "";
 
 /** Cancel everything and schedule what's still needed. Cheap; call freely. */
 export async function syncReminders(input: ReminderInput): Promise<void> {
-  if (Platform.OS === "web") return;
+  const Notifications = notifications();
+  if (!Notifications) return;
   const ok = await ensurePermission(false);
   if (!ok) return;
   const plan = planReminders(input);
@@ -124,7 +163,8 @@ export async function syncReminders(input: ReminderInput): Promise<void> {
 }
 
 export async function clearReminders() {
-  if (Platform.OS === "web") return;
+  const Notifications = notifications();
   last = "";
+  if (!Notifications) return;
   await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
 }

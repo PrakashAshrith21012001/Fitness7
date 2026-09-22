@@ -101,25 +101,25 @@ export default function LogActivity() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 200 }} showsVerticalScrollIndicator={false}>
         {recentActivities.length ? (
           <>
-            <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8 }}>YOUR USUAL</Body>
+            <Body size="micro" style={{ marginBottom: 8 }}>Your usual</Body>
             <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: "4%", rowGap: 8, marginBottom: 18 }}>{recentActivities.map((id) => tile(id, picked === id))}</View>
           </>
         ) : null}
 
         {checkedIn && !gymLogged ? (
-          <View style={{ flexDirection: "row", gap: 10, alignItems: "center", marginBottom: 14, borderRadius: radius.md, borderWidth: 1, borderColor: "rgba(46,204,113,0.45)", backgroundColor: colors.limeSoft, padding: 12 }}>
+          <View style={{ flexDirection: "row", gap: 10, alignItems: "center", marginBottom: 14, borderRadius: radius.md, borderWidth: 1, borderColor: colors.accentBorder, backgroundColor: colors.limeSoft, padding: 12 }}>
             <Ionicons name="checkmark-circle" size={18} color={colors.green} />
             <Body size="small" muted={false} style={{ flex: 1 }}>You checked in today — strength training is pre-selected. Change it if you did something else.</Body>
           </View>
         ) : null}
 
-        <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8 }}>WHAT</Body>
+        <Body size="micro" style={{ marginBottom: 8 }}>What</Body>
         <Chips value={cat} options={ACTIVITY_CATEGORIES} onChange={setCat} />
         <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: "4%", rowGap: 8, marginTop: 12 }}>{list.map((a) => tile(a.id, picked === a.id))}</View>
 
         {chosen ? (
           <View style={{ marginTop: 22 }}>
-            <Body size="micro" style={{ letterSpacing: 1.4, marginBottom: 8 }}>HOW LONG</Body>
+            <Body size="micro" style={{ marginBottom: 8 }}>How long</Body>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {DURATIONS.map((d) => {
                 const on = d === minutes;
@@ -169,10 +169,10 @@ export default function LogActivity() {
             <Body size="small" muted={false} style={{ fontWeight: "600" }} numberOfLines={1}>{chosen.name} · {minutes} min</Body>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
               <Display size="h2" style={{ color: colors.lime }}>≈{kcal}</Display>
-              <Body size="micro">KCAL</Body>
+              <Body size="micro">kcal</Body>
             </View>
           </View>
-          <Body size="micro" style={{ marginBottom: 10 }}>ESTIMATE FOR {kg} KG · MET {chosen.met} · A STARTING POINT, NOT A MEASUREMENT</Body>
+          <Body size="micro" style={{ marginBottom: 10 }}>Estimate for {kg} kg · MET {chosen.met} · a starting point, not a measurement</Body>
           <LimeButton label="Add to today" icon="checkmark" onPress={save} />
         </View>
       ) : null}
