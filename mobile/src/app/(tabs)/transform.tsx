@@ -10,7 +10,7 @@ import { CultButton, H, Label, NavyPage, P, Pane, Segmented, T } from "@/compone
 import { PressScale } from "@/components/motion";
 import { TodayTile } from "@/components/TodayTile";
 import { GAP, GhostSmall } from "@/components/FitnessShared";
-import { classPhoto } from "@/lib/photos";
+import { classPhoto, photo } from "@/lib/photos";
 
 /**
  * Transform — cult's Weight Loss tab: "Weight Loss · TALK TO US", the
@@ -32,7 +32,7 @@ export default function Transform() {
   const coach = trainers[0];
   const talk = () => Linking.openURL(wa.personalTraining()).catch(() => {});
 
-  const heroPhoto = tab === "centre" ? classPhoto("personal") : tab === "online" ? classPhoto("yoga") : classPhoto("hiit");
+  const heroPhoto = tab === "centre" ? photo("transform-centre") : tab === "online" ? classPhoto("yoga") : classPhoto("hiit");
   const heroSub = tab === "centre" ? "Coach-led sessions on the floor" : tab === "online" ? "1:1 video sessions, your schedule" : "Follow-along workouts, coach on WhatsApp";
 
   const header = (

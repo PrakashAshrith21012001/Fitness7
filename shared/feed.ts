@@ -6,41 +6,41 @@
 
 export type HeroSlide = { id: string; title: string; cta: string; photo: string; route: string };
 export const heroSlides: HeroSlide[] = [
-  { id: "bottle", title: "Pick your stainless steel hydration warrior.", cta: "Shop now", photo: "gym-weights", route: "/store" },
-  { id: "trek", title: "One expedition, every month. Yercaud opens the season.", cta: "Reserve a slot", photo: "trek", route: "/treks" },
-  { id: "pt", title: "One coach, one plan, your name on it.", cta: "Try for free", photo: "personal", route: "/fitness" },
+  { id: "bottle", title: "Pick your stainless steel hydration warrior.", cta: "Shop now", photo: "hero-bottle", route: "/store" },
+  { id: "trek", title: "One expedition, every month. Yercaud opens the season.", cta: "Reserve a slot", photo: "hero-trek", route: "/treks" },
+  { id: "pt", title: "One coach, one plan, your name on it.", cta: "Try for free", photo: "hero-pt", route: "/fitness" },
 ];
 
 export type DiscoverTile = { id: string; title: string; sub: string; photo: string; route: string };
 export const discover: DiscoverTile[] = [
-  { id: "yoga", title: "Yoga circle by Fitness 7", sub: "Daily yoga for everyone", photo: "yoga", route: "/class/yoga" },
-  { id: "treks", title: "Treks at Fitness 7", sub: "Explore hills near you", photo: "trek", route: "/treks" },
-  { id: "ladies", title: "Ladies-only hours", sub: "Full floor, reserved", photo: "ladies", route: "/class/ladies" },
-  { id: "pt", title: "1:1 Personal Training", sub: "Try first session free", photo: "personal", route: "/class/personal" },
-  { id: "transform", title: "Weight Loss", sub: "Coaching", photo: "hiit", route: "/transform" },
-  { id: "apparel", title: "Apparel", sub: "Starting at ₹499", photo: "gym-floor", route: "/store" },
-  { id: "accessories", title: "Accessories", sub: "Starting at ₹199", photo: "gym-weights", route: "/store" },
-  { id: "shoes", title: "Sport Shoes", sub: "Starting at ₹1,599", photo: "cardio", route: "/store" },
+  { id: "yoga", title: "Yoga circle by Fitness 7", sub: "Daily yoga for everyone", photo: "discover-yoga", route: "/class/yoga" },
+  { id: "treks", title: "Treks at Fitness 7", sub: "Explore hills near you", photo: "discover-treks", route: "/treks" },
+  { id: "ladies", title: "Ladies-only hours", sub: "Full floor, reserved", photo: "discover-ladies", route: "/class/ladies" },
+  { id: "pt", title: "1:1 Personal Training", sub: "Try first session free", photo: "discover-pt", route: "/class/personal" },
+  { id: "transform", title: "Weight Loss", sub: "Coaching", photo: "discover-weight-loss", route: "/transform" },
+  { id: "apparel", title: "Apparel", sub: "Starting at ₹499", photo: "discover-apparel", route: "/store" },
+  { id: "accessories", title: "Accessories", sub: "Starting at ₹199", photo: "discover-accessories", route: "/store" },
+  { id: "shoes", title: "Sport Shoes", sub: "Starting at ₹1,599", photo: "discover-shoes", route: "/store" },
 ];
 
 export type Video = { id: string; author: string; role: string; title: string; photo: string; minutes: number };
 export const fitEdit: Video[] = [
-  { id: "v1", author: "Karthick", role: "trainer", title: "Stepping into my role as a strength coach", photo: "strength", minutes: 4 },
-  { id: "v2", author: "Durai", role: "trainer", title: "Boost your iron levels today", photo: "combat", minutes: 3 },
-  { id: "v3", author: "Meena S.", role: "member", title: "How the ladies-only hour changed my mornings", photo: "ladies", minutes: 5 },
+  { id: "v1", author: "Karthick", role: "trainer", title: "Stepping into my role as a strength coach", photo: "fitedit-strength-coach", minutes: 4 },
+  { id: "v2", author: "Durai", role: "trainer", title: "Boost your iron levels today", photo: "fitedit-iron-levels", minutes: 3 },
+  { id: "v3", author: "Meena S.", role: "member", title: "How the ladies-only hour changed my mornings", photo: "fitedit-ladies-hour", minutes: 5 },
 ];
 
 export type Article = { id: string; title: string; sub: string; photo: string; cta: string };
 export const fitWay: Article[] = [
-  { id: "a1", title: "8 swaps to eat better.", sub: "Sandwiches, chips, wraps, olives", photo: "cardio", cta: "Know more" },
-  { id: "a2", title: "Sleep is the missing rep.", sub: "Why 7 hours moves the bar", photo: "yoga", cta: "Know more" },
+  { id: "a1", title: "8 swaps to eat better.", sub: "Sandwiches, chips, wraps, olives", photo: "fitway-eat-better", cta: "Know more" },
+  { id: "a2", title: "Sleep is the missing rep.", sub: "Why 7 hours moves the bar", photo: "fitway-sleep", cta: "Know more" },
 ];
 
 export type Recipe = { id: string; title: string; kcal: number; photo: string };
 export const recipes: Recipe[] = [
-  { id: "r1", title: "Filter Kappi Tiramisu Cups", kcal: 172, photo: "cardio" },
-  { id: "r2", title: "Korean Bibimbap-Style Oats Bowl", kcal: 85, photo: "yoga" },
-  { id: "r3", title: "Ragi Dosa with Coconut Chutney", kcal: 210, photo: "hiit" },
+  { id: "r1", title: "Filter Kappi Tiramisu Cups", kcal: 172, photo: "recipe-kappi-tiramisu" },
+  { id: "r2", title: "Korean Bibimbap-Style Oats Bowl", kcal: 85, photo: "recipe-oats-bibimbap" },
+  { id: "r3", title: "Ragi Dosa with Coconut Chutney", kcal: 210, photo: "recipe-ragi-dosa" },
 ];
 export const recipeHero = { title: "One pot is all you need!", sub: "Feel-good recipes with oats", cta: "Surprise recipe" };
 
@@ -52,8 +52,8 @@ export const quotes: Quote[] = [
 ];
 
 export const peopleOf = [
-  { id: "p1", name: "Deepa V.", line: "Four treks and counting", photo: "trek" },
-  { id: "p2", name: "Sathish K.", line: "60 kg to 160 kg deadlift", photo: "strength" },
+  { id: "p1", name: "Deepa V.", line: "Four treks and counting", photo: "people-trekker" },
+  { id: "p2", name: "Sathish K.", line: "60 kg to 160 kg deadlift", photo: "people-lifter" },
 ];
 
 export type Buddy = { id: string; name: string; initials: string; workouts: number };

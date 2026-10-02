@@ -63,7 +63,7 @@ export default function Treks() {
     <NavyPage header={header}>
       {/* ---------- hero ---------- */}
       <View style={{ height: 380 }}>
-        <Image source={gymPhotos.trek} style={{ width: "100%", height: "100%" }} resizeMode="cover" accessibilityIgnoresInvertColors />
+        <Image source={photo("treks-hero")} style={{ width: "100%", height: "100%" }} resizeMode="cover" accessibilityIgnoresInvertColors />
         <LinearGradient pointerEvents="none" colors={["rgba(9,12,28,0.15)", "rgba(9,12,28,0.55)", colors.black]} locations={[0, 0.6, 1]} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }} />
         <View style={{ position: "absolute", left: 16, right: 16, bottom: 20, alignItems: "center" }}>
           <T style={{ fontSize: 16, textAlign: "center" }}>Members save up to ₹1,000 per trek{"\n"}+ one free trek on F7 pass ELITE</T>

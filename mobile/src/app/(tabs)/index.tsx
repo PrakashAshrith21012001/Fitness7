@@ -200,7 +200,7 @@ export default function Home() {
         <View style={{ paddingHorizontal: 16, marginTop: GAP }}>
           <PressScale onPress={() => router.push("/store")} scale={0.985} accessibilityRole="button" accessibilityLabel="Open the Fitness 7 store" style={{ flexDirection: "row", alignItems: "center", gap: 14, height: 72 }}>
             <View style={{ width: 64, height: 64, borderRadius: 14, overflow: "hidden", backgroundColor: colors.surface2 }}>
-              <Image source={photo("gym-weights")} style={{ width: "100%", height: "100%" }} resizeMode="cover" accessibilityIgnoresInvertColors />
+              <Image source={photo("store-strip")} style={{ width: "100%", height: "100%" }} resizeMode="cover" accessibilityIgnoresInvertColors />
             </View>
             <LinearGradient colors={["#5b1d8f", "#c11e5e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1, height: 44, borderRadius: 22, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>Your one-stop fitness store nearby</Text>
@@ -233,7 +233,7 @@ export default function Home() {
         <View style={{ marginTop: GAP, paddingHorizontal: 16 }}>
           <H size={20} style={{ marginBottom: 12 }}>{recipeHero.title.replace(/\b\w/g, (c) => c.toUpperCase())}</H>
           <PressScale onPress={() => router.push("/food")} scale={0.985} accessibilityRole="button" accessibilityLabel={recipeHero.cta} style={{ height: 220, borderRadius: 14, overflow: "hidden", backgroundColor: colors.surface2 }}>
-            <Image source={photo("cardio")} style={{ width: "100%", height: "100%" }} resizeMode="cover" accessibilityIgnoresInvertColors />
+            <Image source={photo("recipe-one-pot")} style={{ width: "100%", height: "100%" }} resizeMode="cover" accessibilityIgnoresInvertColors />
             <Scrim strength={0.85} />
             <View style={{ position: "absolute", left: 0, right: 0, bottom: 16, alignItems: "center" }}>
               <Text style={{ color: "#fff", fontSize: 20, fontStyle: "italic", fontWeight: "600" }}>{recipeHero.sub.split(" with")[0]}</Text>

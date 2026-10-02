@@ -12,3 +12,5 @@ web/.data/
 web/next-env.d.ts
 mobile/expo-env.d.ts
 .staging/
+Gym.zip
+Gym/

@@ -8,6 +8,7 @@ import { useSession, today } from "@/state/session";
 import { useDay } from "@/state/day";
 import { useTracker } from "@/state/tracker";
 import { ArcRing, Card, Divider, HMSheet, HT, IconBubble, Line2, PlusBtn, SparkleFab, Sparkline, Wash, hm, tap, Btn } from "@/components/hm";
+import { photo } from "@/lib/photos";
 import { DateChip, DateSheet, MealPickerSheet, TrackerTabBar, useMealPicker } from "@/components/TrackerKit";
 import { clockOf, fmt, useTrackerDay } from "@/lib/tracker-day";
 import { StepsSheet } from "@/components/StepsSheet";
@@ -365,13 +366,13 @@ function TopBar({ date, onDate, onAvatar, plan, onPlan }: { date: string; onDate
 }
 
 function SnapStack({ thumbs }: { thumbs: string[] }) {
+  // No snaps yet: a stack of real plates so the card never looks empty.
   if (!thumbs.length) {
+    const plates = [photo("recipe-oats-bibimbap"), photo("recipe-one-pot"), photo("recipe-ragi-dosa")];
     return (
       <View style={{ width: 44, height: 44 }}>
-        {[0, 1, 2].map((i) => (
-          <View key={i} style={{ position: "absolute", left: i * 4, top: 4 - i * 2, width: 34, height: 38, borderRadius: 6, backgroundColor: ["#c88a3a", "#e0a54a", "#f2c46b"][i], borderWidth: 2, borderColor: "#fff", transform: [{ rotate: `${-10 + i * 10}deg` }] }}>
-            {i === 2 ? <Ionicons name="fast-food" size={16} color="#fff" style={{ alignSelf: "center", marginTop: 9 }} /> : null}
-          </View>
+        {plates.map((src, i) => (
+          <Image key={i} source={src} style={{ position: "absolute", left: i * 4, top: 4 - i * 2, width: 34, height: 38, borderRadius: 6, borderWidth: 2, borderColor: "#fff", transform: [{ rotate: `${-10 + i * 10}deg` }] }} />
         ))}
       </View>
     );

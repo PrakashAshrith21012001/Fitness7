@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Image, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RECIPE_BY_ID, RECIPE_CATEGORIES, fibrePer100, recipeNutrition, similarRecipes } from "@f7/content";
 import { Btn, CIRCLE_TINTS, Divider, Footer, HT, LetterCircle, hm, tap } from "@/components/hm";
+import { hasPhoto, photo } from "@/lib/photos";
 
 /** One recipe: time · serves · Cal, nutrition per 100 g, ingredients, method, similar recipes, and Track. */
 export default function Recipe() {
@@ -43,9 +44,13 @@ export default function Recipe() {
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <View style={{ height: 230 + insets.top, justifyContent: "center", alignItems: "center" }}>
           <LinearGradient colors={[cat.tint, "#2b2b2e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }} />
-          <View style={{ marginTop: insets.top }}>
-            <LetterCircle letter={r.name[0]} color="rgba(255,255,255,0.18)" size={110} />
-          </View>
+          {r.photo && hasPhoto(r.photo) ? (
+            <Image source={photo(r.photo)} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, width: "100%", height: "100%" }} resizeMode="cover" accessibilityLabel={r.name} />
+          ) : (
+            <View style={{ marginTop: insets.top }}>
+              <LetterCircle letter={r.name[0]} color="rgba(255,255,255,0.18)" size={110} />
+            </View>
+          )}
           <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10} style={{ position: "absolute", top: insets.top + 6, left: 8, width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.25)", alignItems: "center", justifyContent: "center" }}>
             <Ionicons name="chevron-back" size={22} color="#fff" />
           </Pressable>
@@ -106,7 +111,11 @@ export default function Recipe() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingHorizontal: 10 }}>
           {similarRecipes(r).map((s, i) => (
             <Pressable key={s.id} onPress={() => { tap(); router.replace(`/food/recipe?id=${s.id}` as never); }} accessibilityRole="button" accessibilityLabel={s.name} style={{ width: 100, alignItems: "center" }}>
-              <LetterCircle letter={s.name[0]} color={CIRCLE_TINTS[(i + 3) % CIRCLE_TINTS.length]} size={76} />
+              {s.photo && hasPhoto(s.photo) ? (
+                <Image source={photo(s.photo)} style={{ width: 76, height: 76, borderRadius: 38 }} resizeMode="cover" accessibilityIgnoresInvertColors />
+              ) : (
+                <LetterCircle letter={s.name[0]} color={CIRCLE_TINTS[(i + 3) % CIRCLE_TINTS.length]} size={76} />
+              )}
               <HT size={12} color={hm.ink2} center numberOfLines={2} style={{ marginTop: 6 }}>{s.name}</HT>
             </Pressable>
           ))}

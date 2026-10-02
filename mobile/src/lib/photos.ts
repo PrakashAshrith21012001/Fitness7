@@ -26,13 +26,52 @@ export const gymPhotos = {
   hero: require("@/assets/photos/hero.jpg") as ImageSourcePropType,
 };
 
+/**
+ * Campaign photos (Oct 2026 HD set) for Home, Treks, Transform and the
+ * tracker. Names match the slots in the image-prompt sheet. Metro needs
+ * literal requires.
+ */
+const CAMPAIGN: Record<string, ImageSourcePropType> = {
+  "treks-hero": require("@/assets/photos/treks-hero.jpg"),
+  "hero-bottle": require("@/assets/photos/home/hero-bottle.jpg"),
+  "hero-trek": require("@/assets/photos/home/hero-trek.jpg"),
+  "hero-pt": require("@/assets/photos/home/hero-pt.jpg"),
+  "store-strip": require("@/assets/photos/home/store-strip.jpg"),
+  "discover-yoga": require("@/assets/photos/discover/yoga.jpg"),
+  "discover-treks": require("@/assets/photos/discover/treks.jpg"),
+  "discover-ladies": require("@/assets/photos/discover/ladies.jpg"),
+  "discover-pt": require("@/assets/photos/discover/pt.jpg"),
+  "discover-weight-loss": require("@/assets/photos/discover/weight-loss.jpg"),
+  "discover-apparel": require("@/assets/photos/discover/apparel.jpg"),
+  "discover-accessories": require("@/assets/photos/discover/accessories.jpg"),
+  "discover-shoes": require("@/assets/photos/discover/shoes.jpg"),
+  "fitedit-strength-coach": require("@/assets/photos/fitedit/strength-coach.jpg"),
+  "fitedit-iron-levels": require("@/assets/photos/fitedit/iron-levels.jpg"),
+  "fitedit-ladies-hour": require("@/assets/photos/fitedit/ladies-hour.jpg"),
+  "fitway-eat-better": require("@/assets/photos/fitway/eat-better.jpg"),
+  "fitway-sleep": require("@/assets/photos/fitway/sleep.jpg"),
+  "recipe-one-pot": require("@/assets/photos/recipes/one-pot-hero.jpg"),
+  "recipe-kappi-tiramisu": require("@/assets/photos/recipes/kappi-tiramisu.jpg"),
+  "recipe-oats-bibimbap": require("@/assets/photos/recipes/oats-bibimbap.jpg"),
+  "recipe-ragi-dosa": require("@/assets/photos/recipes/ragi-dosa.jpg"),
+  "people-trekker": require("@/assets/photos/people/trekker.jpg"),
+  "people-lifter": require("@/assets/photos/people/lifter.jpg"),
+  "transform-centre": require("@/assets/photos/transform/centre.jpg"),
+};
+
 const BY_NAME: Record<string, ImageSourcePropType> = {
   ...CLASS,
+  ...CAMPAIGN,
   "gym-floor": gymPhotos.floor,
   "gym-weights": gymPhotos.weights,
   trek: gymPhotos.trek,
   hero: gymPhotos.hero,
 };
+
+/** True when a bundled photo exists under this name. */
+export function hasPhoto(name: string): boolean {
+  return name in BY_NAME;
+}
 
 export function classPhoto(id: string): ImageSourcePropType {
   return CLASS[id] ?? gymPhotos.weights;

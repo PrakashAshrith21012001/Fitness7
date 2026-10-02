@@ -10,13 +10,13 @@ import { FOOD_BY_ID, macrosFor, type Food } from "./foods";
 
 export type RecipeCategory = "sabzi" | "roti" | "rice" | "salad" | "juice" | "breakfast" | "protein";
 
-export const RECIPE_CATEGORIES: { id: RecipeCategory; label: string; tint: string }[] = [
+export const RECIPE_CATEGORIES: { id: RecipeCategory; label: string; tint: string; photo?: string }[] = [
   { id: "sabzi", label: "Sabzis, Dals and Curries", tint: "#c2410c" },
   { id: "roti", label: "Rotis & Parathas", tint: "#a16207" },
   { id: "rice", label: "Rice Based Dishes", tint: "#0f766e" },
   { id: "salad", label: "Salads", tint: "#4d7c0f" },
   { id: "juice", label: "Fruits and Juices", tint: "#be185d" },
-  { id: "breakfast", label: "South Indian Breakfast", tint: "#7c3aed" },
+  { id: "breakfast", label: "South Indian Breakfast", tint: "#7c3aed", photo: "recipe-ragi-dosa" },
   { id: "protein", label: "High Protein", tint: "#1d4ed8" },
 ];
 
@@ -32,6 +32,8 @@ export type HealthyRecipe = {
   ingredients: string[];
   steps: string[];
   tags?: string[];
+  /** bundled photo name (mobile/src/lib/photos.ts); letter circle when absent */
+  photo?: string;
 };
 
 export const RECIPES: HealthyRecipe[] = [
@@ -43,7 +45,7 @@ export const RECIPES: HealthyRecipe[] = [
   { id: "curd-rice", name: "Curd Rice", category: "rice", foodId: "curd-rice", minutes: 10, serves: 2, servingG: 200, ingredients: ["1½ cups cooked rice, mashed", "1 cup curd", "¼ cup milk", "Grated carrot, cucumber", "½ tsp mustard, curry leaves, ginger", "Salt"], steps: ["Mix rice with curd, milk and salt.", "Temper mustard, curry leaves and ginger in ½ tsp oil and pour over.", "Fold in carrot and cucumber."] },
   { id: "thinai-pongal", name: "Millet Pongal", category: "breakfast", foodId: "thinai-pongal", minutes: 30, serves: 3, servingG: 200, ingredients: ["¾ cup foxtail millet (thinai)", "¼ cup moong dal", "1 tsp pepper, 1 tsp cumin", "Ginger, curry leaves, 6 cashews", "2 tsp ghee", "3½ cups water, salt"], steps: ["Dry-roast the moong dal till fragrant; wash with the millet.", "Pressure cook with water and salt for 4 whistles; mash lightly.", "Temper pepper, cumin, ginger, curry leaves and cashews in ghee; mix in."] },
   // Breakfast
-  { id: "ragi-dosa", name: "Ragi Dosa", category: "breakfast", foodId: "ragi-dosa", minutes: 20, serves: 3, servingG: 160, ingredients: ["1 cup ragi flour", "¼ cup rice flour", "¼ cup curd", "1 onion, chopped; green chilli; coriander", "Salt, water to a thin batter"], steps: ["Whisk everything into a thin, pourable batter; rest 10 minutes.", "Pour from the edge of a hot tawa inwards like rava dosa.", "Drizzle a few drops of oil, cook till crisp; no need to flip."] },
+  { id: "ragi-dosa", name: "Ragi Dosa", category: "breakfast", foodId: "ragi-dosa", photo: "recipe-ragi-dosa", minutes: 20, serves: 3, servingG: 160, ingredients: ["1 cup ragi flour", "¼ cup rice flour", "¼ cup curd", "1 onion, chopped; green chilli; coriander", "Salt, water to a thin batter"], steps: ["Whisk everything into a thin, pourable batter; rest 10 minutes.", "Pour from the edge of a hot tawa inwards like rava dosa.", "Drizzle a few drops of oil, cook till crisp; no need to flip."] },
   { id: "pesarattu", name: "Pesarattu", category: "breakfast", foodId: "pesarattu", minutes: 20, serves: 3, servingG: 180, ingredients: ["1 cup whole green moong, soaked 6 hours", "1 inch ginger, 2 green chillies", "¼ tsp cumin, salt", "Chopped onion to top"], steps: ["Grind the moong with ginger, chillies, cumin and salt to a smooth batter.", "Spread thin on a hot tawa, sprinkle onion, a few drops of oil.", "Cook till golden, fold and serve with ginger chutney."] },
   { id: "moong-dal-chilla", name: "Moong Dal Chilla", category: "breakfast", foodId: "moong-dal-chilla", minutes: 20, serves: 2, servingG: 160, ingredients: ["1 cup yellow moong dal, soaked 3 hours", "Ginger, green chilli", "Grated paneer or chopped vegetables (optional)", "Salt"], steps: ["Grind dal with ginger, chilli and salt to a thick batter.", "Spread on a hot pan, top with vegetables or paneer.", "Cook both sides with a few drops of oil."] },
   { id: "idli-sambar", name: "Idli with Sambar", category: "breakfast", foodId: "idli", minutes: 20, serves: 3, servingG: 120, ingredients: ["Idli batter (2:1 idli rice : urad dal, fermented)", "Sambar: ½ cup toor dal, vegetables, tamarind, sambar powder"], steps: ["Fill greased idli plates ¾ full; steam 10–12 minutes.", "Rest 2 minutes before unmoulding.", "Serve 3 idli with a katori of sambar for a ~300 Cal breakfast."] },
