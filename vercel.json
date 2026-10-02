@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci",
+  "buildCommand": "cd mobile && npx expo export --platform web",
+  "outputDirectory": "mobile/dist",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/trek/:id", "destination": "/trek/[id]" },
+    { "source": "/class/:id", "destination": "/class/[id]" },
+    { "source": "/booking/:id", "destination": "/booking/[id]" },
+    { "source": "/exercise/:id", "destination": "/exercise/[id]" },
+    { "source": "/upgrade/:plan", "destination": "/upgrade/[plan]" },
+    { "source": "/store/category/:id", "destination": "/store/category/[id]" },
+    { "source": "/store/product/:id", "destination": "/store/product/[id]" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
