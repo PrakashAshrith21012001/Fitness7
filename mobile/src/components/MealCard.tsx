@@ -11,10 +11,11 @@ import type { FoodEntry } from "@/state/food";
 import { Kcal } from "@/components/Kcal";
 
 /** How a day's budget is usually split — a guide, not a rule. Sums to 1. */
-export const MEAL_SHARE: Record<MealSlot, number> = { breakfast: 0.25, lunch: 0.35, snacks: 0.1, dinner: 0.3 };
+export const MEAL_SHARE: Record<MealSlot, number> = { breakfast: 0.25, morning_snack: 0.125, lunch: 0.25, snacks: 0.125, dinner: 0.25 };
 
 const META: Record<MealSlot, { icon: keyof typeof Ionicons.glyphMap; hint: string; share: number }> = {
   breakfast: { icon: "sunny-outline", hint: "Idli, dosa, pongal…", share: MEAL_SHARE.breakfast },
+  morning_snack: { icon: "nutrition-outline", hint: "Fruit, nuts, buttermilk…", share: MEAL_SHARE.morning_snack },
   lunch: { icon: "restaurant-outline", hint: "Meals, biryani, curd rice…", share: MEAL_SHARE.lunch },
   snacks: { icon: "cafe-outline", hint: "Tea, sundal, fruit…", share: MEAL_SHARE.snacks },
   dinner: { icon: "moon-outline", hint: "Chapati, dosa, rice…", share: MEAL_SHARE.dinner },

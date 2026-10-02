@@ -5,10 +5,12 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import { fmtKcal, type MealSlot } from "@f7/content";
+import { fmtKcal, isMealSlot, type MealSlot } from "@f7/content";
 import { radius, type } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
-import { useSession } from "@/state/session";
+import { useSession, today } from "@/state/session";
+import { useTracker } from "@/state/tracker";
+import { toThumb } from "@/lib/thumb";
 import { MEALS, useFood, type DraftItem } from "@/state/food";
 import { FoodItemRow } from "@/components/FoodItemRow";
 import { Chips } from "@/components/Pickers";
@@ -40,9 +42,11 @@ export default function SnapFood() {
   const [items, setItems] = useState<DraftItem[] | null>(null);
   const [plate, setPlate] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const [slot, setSlot] = useState<MealSlot>(defaultSlot());
+  const params = useLocalSearchParams<{ fixture?: string; meal?: string; date?: string }>();
+  const [slot, setSlot] = useState<MealSlot>(isMealSlot(params.meal) ? params.meal : defaultSlot());
+  const date = params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : today();
+  const { addSnap } = useTracker();
   const hide = !!member?.hideCalories;
-  const params = useLocalSearchParams<{ fixture?: string }>();
 
   // Dev only: ?fixture=1 shows the bundled sample plate with a canned result, for screenshots without an API key.
   useEffect(() => {
@@ -94,7 +98,7 @@ export default function SnapFood() {
       setItems(res.items);
       setPlate(res.plateDescription ?? null);
       setNote(res.notes);
-      if (res.mealSlot) setSlot(res.mealSlot);
+      if (res.mealSlot && !isMealSlot(params.meal)) setSlot(res.mealSlot);
       if (!res.items.length && !res.notes) setNote("Couldn't make out a meal — try a clearer photo from above, or type it.");
     } catch (e) {
       setNote((e as Error).message || "Couldn't analyse that photo. Try again, or type the meal.");
@@ -109,7 +113,16 @@ export default function SnapFood() {
   const save = async () => {
     if (!items?.length) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    await addItems(items, slot);
+    await addItems(items, slot, date);
+    // Keep a small thumbnail on this phone for "Browse all your past snaps".
+    if (uri) {
+      try {
+        const thumb = await toThumb(uri, undefined, undefined, 320);
+        await addSnap({ date, meal: slot, thumb, kcal: Math.round(total), names: items.map((i) => i.name) });
+      } catch {
+        /* the log is saved; the thumbnail is a nice-to-have */
+      }
+    }
     router.back();
   };
 

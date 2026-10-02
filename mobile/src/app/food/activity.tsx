@@ -131,7 +131,7 @@ export default function LogActivity() {
                       setMinutes(d);
                     }}
                     accessibilityRole="radio"
-                    accessibilityState={{ selected: on }}
+                    accessibilityState={{ selected: on }} aria-selected={on}
                     style={{ minHeight: 40, paddingHorizontal: 14, justifyContent: "center", borderRadius: radius.pill, borderWidth: 1, borderColor: on ? colors.green : colors.line, backgroundColor: on ? colors.green : colors.surface2 }}
                   >
                     <Body size="small" style={{ fontWeight: "600", color: on ? colors.onAccent : colors.white }}>{d < 60 ? `${d} min` : d === 60 ? "1 hr" : d === 90 ? "1½ hr" : `${d / 60} hr`}</Body>

@@ -1,13 +1,15 @@
-import { useState } from "react";
-import { FlatList, Image, Pressable, ScrollView, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { FlatList, Image, PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { brand, daysUntil, discover, fitWay, heroSlides, quotes, recipeHero, recipes, workoutFor } from "@f7/content";
+import { brand, daysUntil, discover, fitWay, heroSlides, products, quotes, recipeHero, recipes } from "@f7/content";
 import { useColors } from "@/theme/ThemeProvider";
 import { useSession } from "@/state/session";
-import { useBookings, className } from "@/state/bookings";
+import { useBookings } from "@/state/bookings";
+import { ActivitySheet } from "@/components/ActivitySheet";
+import { productImage } from "@/lib/storeImages";
 import { ActionTile, CultButton, Dots, H, Label, NavyPage, P, Pane, SectionHead, T } from "@/components/cult";
 import { PressScale } from "@/components/motion";
 import { AnnouncementCard } from "@/components/AnnouncementCard";
@@ -24,24 +26,37 @@ import { photo } from "@/lib/photos";
 
 type Tile = { icon: keyof typeof Ionicons.glyphMap; label: string; go: () => void; tint?: string };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const to12 = (t: string) => {
-  const [h, m] = t.split(":").map(Number);
-  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
-};
+
+/** "What's new" product cards under the quick actions (cult's "What's new in cult") */
+const whatsNew = [
+  { id: "massage-gun", kicker: "DEEP TISSUE MASSAGE GUN", title: "Targeted recovery for legs, back & shoulders" },
+  { id: "knee-sleeve", kicker: "COMPRESSION SUPPORT", title: "Warm, steady support for active knees" },
+  { id: "trainer-shoe", kicker: "F7 FLEX TRAINER", title: "Grip and spring for every class" },
+  { id: "posture", kicker: "POSTURE CORRECTOR", title: "Stand taller between sets" },
+];
 
 export default function Home() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { member } = useSession();
-  const { upcoming, weeksActive } = useBookings();
+  const { thisWeek, streakDays } = useBookings();
   const [more, setMore] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  // swipe up on the bottom bar opens the weekly-activity sheet
+  const swipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => g.dy < -10 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderRelease: (_, g) => {
+        if (g.dy < -30) setSheet(true);
+      },
+    }),
+  ).current;
   const hero = useHorizontalIndex(SCREEN_W);
   const quote = useHorizontalIndex(SCREEN_W - 32 + 12);
 
   const initials = (member?.name || "F7").trim().split(/\s+/).map((s) => s[0]).join("").slice(0, 2).toUpperCase();
-  const streak = Math.max(weeksActive, member?.streakWeeks ?? 0);
+  const streak = streakDays;
   const renewDays = member?.plan ? daysUntil(member.plan.renewsOn) : null;
   const renewSoon = renewDays !== null && renewDays <= 7;
 
@@ -50,7 +65,7 @@ export default function Home() {
     { icon: "qr-code-outline", label: "check-in\nat gym", go: () => router.push("/checkin"), tint: colors.pink },
     { icon: "play-circle-outline", label: "workout\nat home", go: () => router.push("/plan"), tint: colors.gold },
     { icon: "restaurant-outline", label: "calorie\ntracker", go: () => router.push("/food"), tint: colors.success },
-    { icon: "people-outline", label: "view\nmy squad", go: () => router.push({ pathname: "/fitness", params: { tab: "profile" } }), tint: colors.success },
+    { icon: "people-outline", label: "view\nmy squad", go: () => router.push("/squad"), tint: colors.success },
     { icon: "trail-sign-outline", label: `clubs at\n${brand.name}`, go: () => router.push("/treks"), tint: colors.gold },
     { icon: "barbell-outline", label: "smart workout\nplan", go: () => router.push("/plan"), tint: "#7aa2ff" },
     { icon: "trending-up-outline", label: "strength\ntracker", go: () => router.push("/progress"), tint: colors.pink },
@@ -61,11 +76,6 @@ export default function Home() {
     { icon: "card-outline", label: "membership", go: () => router.push("/membership"), tint: "#7aa2ff" },
     { icon: "chatbubble-ellipses-outline", label: "ask F7", go: () => router.push("/chat"), tint: colors.pink },
   ];
-
-  const next = upcoming[0];
-  const nextDate = next ? new Date(next.date + "T12:00:00") : null;
-  const nextFocus = next ? workoutFor(next.classId, nextDate!.getDay()).focus : "";
-  const isToday = next ? next.date === new Date().toISOString().slice(0, 10) : false;
 
   const tileW = (SCREEN_W - 32) / 4;
 
@@ -100,14 +110,17 @@ export default function Home() {
             <Pressable onPress={() => router.push("/profile")} accessibilityRole="button" accessibilityLabel="My profile" style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.pink, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "rgba(255,255,255,0.6)" }}>
               <Text style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}>{initials}</Text>
             </Pressable>
-            <Pressable onPress={() => router.push("/progress")} accessibilityRole="button" accessibilityLabel={`${streak} week streak`} style={{ flexDirection: "row", alignItems: "center", gap: 8, height: 40, paddingLeft: 12, paddingRight: 44, borderRadius: 20, backgroundColor: "rgba(20,16,60,0.85)", borderWidth: 1, borderColor: "rgba(160,140,255,0.5)" }}>
-              <Ionicons name="flash" size={16} color={colors.gold} />
-              <Text style={{ color: "#fff", fontSize: 14 }}>
-                <Text style={{ fontWeight: "800" }}>{streak}</Text> week streak
+            <Pressable onPress={() => setSheet(true)} accessibilityRole="button" accessibilityLabel={`${streak} day streak`} style={{ flexDirection: "row", alignItems: "center", gap: 8, height: 44, paddingLeft: 14, paddingRight: 52, borderRadius: 22, backgroundColor: "rgba(60,8,24,0.9)", borderWidth: 1.5, borderColor: "rgba(255,70,90,0.75)" }}>
+              <Ionicons name="flame" size={18} color="#ffb020" />
+              <Text style={{ color: "#fff", fontSize: 16 }}>
+                <Text style={{ fontWeight: "800" }}>{streak}</Text> day streak
               </Text>
-              <View style={{ position: "absolute", right: -2, top: -8, width: 46, height: 46, borderRadius: 23, backgroundColor: "#4c3bd6", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "rgba(255,255,255,0.35)" }}>
-                <Ionicons name="happy-outline" size={24} color="#fff" />
+              <View style={{ position: "absolute", right: -4, top: -6, width: 52, height: 52, borderRadius: 26, backgroundColor: "#4c3bd6", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "rgba(255,255,255,0.35)" }}>
+                <Ionicons name="happy-outline" size={28} color="#fff" />
               </View>
+            </Pressable>
+            <Pressable onPress={() => router.push("/settings")} accessibilityRole="button" accessibilityLabel="Notifications" hitSlop={8} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="notifications-outline" size={24} color="#fff" />
             </Pressable>
           </View>
         </View>
@@ -123,6 +136,28 @@ export default function Home() {
           <View style={{ alignItems: "center", marginTop: 16 }}>
             <CultButton label={more ? "See less" : "See more"} variant="dark" small full={false} onPress={() => setMore((m) => !m)} style={{ backgroundColor: "rgba(255,255,255,0.14)" }} />
           </View>
+        </View>
+
+        {/* ---------- What's new ---------- */}
+        <View style={{ marginTop: 28 }}>
+          <H size={20} style={{ paddingHorizontal: 16, marginBottom: 12 }}>What's new in {brand.name}</H>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
+            {whatsNew.map((n) => {
+              const prod = products.find((x) => x.id === n.id);
+              if (!prod) return null;
+              return (
+                <PressScale key={n.id} onPress={() => router.push(`/store/product/${n.id}`)} scale={0.98} accessibilityRole="button" accessibilityLabel={`${n.title}. Explore now`} style={{ width: 170, height: 230, borderRadius: 12, overflow: "hidden", backgroundColor: "#e9ecf5" }}>
+                  <Image source={productImage(prod.image)} style={{ width: "100%", height: "100%" }} resizeMode="cover" accessibilityIgnoresInvertColors />
+                  <LinearGradient pointerEvents="none" colors={["rgba(9,12,28,0)", "rgba(9,12,28,0.92)"]} locations={[0.35, 0.8]} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }} />
+                  <View style={{ position: "absolute", left: 10, right: 10, bottom: 12 }}>
+                    <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 8, fontWeight: "800", letterSpacing: 0.8 }}>{n.kicker}</Text>
+                    <Text style={{ color: "#fff", fontSize: 14, lineHeight: 17, fontWeight: "800", marginTop: 4 }} numberOfLines={2}>{n.title}</Text>
+                    <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, marginTop: 4 }}>Explore now</Text>
+                  </View>
+                </PressScale>
+              );
+            })}
+          </ScrollView>
         </View>
 
         <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
@@ -261,25 +296,27 @@ export default function Home() {
         </View>
       </NavyPage>
 
-      {/* ---------- Upcoming pill above the tab bar ---------- */}
-      {next ? (
-        <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}>
-          <LinearGradient pointerEvents="none" colors={["rgba(9,12,28,0)", colors.navyDeep]} style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 90 }} />
-          <Pressable onPress={() => router.push(`/booking/${next.id}`)} accessibilityRole="button" accessibilityLabel={`Upcoming: ${className(next.classId)} ${nextFocus}, ${to12(next.time)}`} style={{ marginHorizontal: 12, marginBottom: 6, height: 58, borderRadius: 12, backgroundColor: "rgba(20,26,54,0.96)", borderWidth: 1, borderColor: colors.line, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 12 }}>
-            <Ionicons name="calendar-outline" size={20} color={colors.white} />
-            <View style={{ flex: 1 }}>
-              <T numberOfLines={1} style={{ fontSize: 13 }}>Upcoming : {className(next.classId)} {nextFocus}</T>
-              <P numberOfLines={1} size={11}>
-                {to12(next.time)}, {isToday ? "Today" : ""} {nextDate!.getDate()} {MONTHS[nextDate!.getMonth()]}, {brand.name} TS Square
-              </P>
-            </View>
-            {upcoming.length > 1 ? <T style={{ fontSize: 13 }}>+{upcoming.length - 1}</T> : null}
-            <View style={{ position: "absolute", top: -9, left: 0, right: 0, alignItems: "center" }}>
-              <Ionicons name="chevron-up" size={14} color={colors.muted} />
+      {/* ---------- This Week Activity bar above the tab bar — swipe up for the sheet ---------- */}
+      <View pointerEvents="box-none" style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}>
+        <LinearGradient pointerEvents="none" colors={["rgba(9,12,28,0)", colors.navyDeep]} style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 90 }} />
+        <View {...swipe.panHandlers} style={{ marginBottom: 0, height: 66, backgroundColor: "rgba(16,20,44,0.97)", borderTopWidth: 1, borderTopColor: colors.line, flexDirection: "row", alignItems: "center", paddingHorizontal: 18, gap: 14 }}>
+          <Pressable onPress={() => setSheet(true)} accessibilityRole="button" accessibilityLabel={`${thisWeek.done} of ${thisWeek.target} this week activity. Open weekly activity`} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 16, height: "100%" }}>
+            <Ionicons name="flash" size={24} color="#fff" />
+            <View>
+              <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>{thisWeek.done}/{thisWeek.target}</Text>
+              <P size={12}>This Week Activity</P>
             </View>
           </Pressable>
+          <Pressable onPress={() => router.push("/fitness")} accessibilityRole="button" accessibilityLabel="Book a class" hitSlop={8} style={{ height: 44, justifyContent: "center", paddingLeft: 12 }}>
+            <Text style={{ color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: 1 }}>BOOK</Text>
+          </Pressable>
+          <Pressable onPress={() => setSheet(true)} accessibilityRole="button" accessibilityLabel="Open weekly activity" hitSlop={10} style={{ position: "absolute", top: -22, left: SCREEN_W / 2 - 20, width: 40, height: 24, alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="chevron-up" size={20} color="#fff" />
+          </Pressable>
         </View>
-      ) : null}
+      </View>
+
+      <ActivitySheet open={sheet} onClose={() => setSheet(false)} />
     </View>
   );
 }

@@ -24,7 +24,18 @@ export type ReminderInput = {
   waterGoalMl: number;
   glassMl: number;
   firstName?: string;
+  /** Sleep tracker reminders ("23:30" style), null when off */
+  bedTime?: string | null;
+  wakeTime?: string | null;
+  sleepLoggedToday?: boolean;
+  /** Weekly weigh-in, Mondays 7 am */
+  weighIn?: boolean;
 };
+
+function hhmm(t: string): [number, number] {
+  const [h, m] = t.split(":").map(Number);
+  return [h || 0, m || 0];
+}
 
 const ASKED_KEY = "f7-notif-asked";
 const CHANNEL = "reminders";
@@ -114,12 +125,12 @@ export function planReminders(input: ReminderInput): Planned[] {
   };
 
   if (input.meals) {
-    if (!input.logged.breakfast) add({ id: "bf-0", when: at(0, 9, 30), title: "Breakfast logged?", body: `${name}two taps — type it or snap the plate.`, url: "/food/add" });
-    if (!input.logged.lunch) add({ id: "lu-0", when: at(0, 13, 30), title: "Lunch logged?", body: "Type it in plain words — Tamil names work.", url: "/food/add" });
-    if (!input.logged.dinner) add({ id: "di-0", when: at(0, 21, 0), title: "How was dinner?", body: "Log it and the day is complete.", url: "/food/add" });
+    if (!input.logged.breakfast) add({ id: "bf-0", when: at(0, 9, 30), title: "Breakfast logged?", body: `${name}two taps — type it or snap the plate.`, url: "/food/log?meal=breakfast" });
+    if (!input.logged.lunch) add({ id: "lu-0", when: at(0, 13, 30), title: "Lunch logged?", body: "Search it or snap the plate — Tamil names work.", url: "/food/log?meal=lunch" });
+    if (!input.logged.dinner) add({ id: "di-0", when: at(0, 21, 0), title: "How was dinner?", body: "Log it and the day is complete.", url: "/food/log?meal=dinner" });
     // tomorrow, unconditional
-    add({ id: "lu-1", when: at(1, 13, 30), title: "Lunch logged?", body: "Type it in plain words — Tamil names work.", url: "/food/add" });
-    add({ id: "di-1", when: at(1, 21, 0), title: "How was dinner?", body: "Log it and the day is complete.", url: "/food/add" });
+    add({ id: "lu-1", when: at(1, 13, 30), title: "Lunch logged?", body: "Search it or snap the plate — Tamil names work.", url: "/food/log?meal=lunch" });
+    add({ id: "di-1", when: at(1, 21, 0), title: "How was dinner?", body: "Log it and the day is complete.", url: "/food/log?meal=dinner" });
   }
   if (input.water) {
     const glasses = Math.round(input.waterMl / input.glassMl);
@@ -131,6 +142,21 @@ export function planReminders(input: ReminderInput): Planned[] {
       add({ id: "wa-1", when: at(0, 20, 30), title: "Water check", body: `${glasses} of ${goal} glasses today. One more before bed?`, url: "/food" });
     }
     add({ id: "wa-2", when: at(1, 11, 0), title: "Water check", body: "Mid-morning — how many glasses so far?", url: "/food" });
+  }
+  if (input.bedTime) {
+    const [h, m] = hhmm(input.bedTime);
+    add({ id: "bed-0", when: at(0, h, m), title: "Time to wind down", body: "Phone down, lights dim — recovery starts now.", url: "/food/sleep" });
+    add({ id: "bed-1", when: at(1, h, m), title: "Time to wind down", body: "Phone down, lights dim — recovery starts now.", url: "/food/sleep" });
+  }
+  if (input.wakeTime) {
+    const [h, m] = hhmm(input.wakeTime);
+    if (!input.sleepLoggedToday) add({ id: "wake-0", when: at(0, h, m + 30), title: "How did you sleep?", body: "One tap to log last night.", url: "/food/sleep" });
+    add({ id: "wake-1", when: at(1, h, m + 30), title: "How did you sleep?", body: "One tap to log last night.", url: "/food/sleep" });
+  }
+  if (input.weighIn) {
+    const d = new Date();
+    const toMon = (8 - d.getDay()) % 7 || 7;
+    add({ id: "wt", when: at(d.getDay() === 1 && d.getHours() < 7 ? 0 : toMon, 7, 0), title: "Weigh-in Monday", body: "Same time, same scale — log it before breakfast.", url: "/food/weight?add=1" });
   }
   return out;
 }

@@ -18,7 +18,7 @@ export function NudgeCard() {
   if (!nudge) return null;
   return (
     <Pressable
-      onPress={() => router.push(nudge.url)}
+      onPress={() => router.push(nudge.url as never)}
       accessibilityRole="button"
       accessibilityLabel={`${nudge.title}. ${nudge.body}`}
       style={({ pressed }) => [

@@ -1,5 +1,5 @@
 import type { Ionicons } from "@expo/vector-icons";
-import { COMBO_BY_ID, FOOD_BY_ID, FOODS, macrosFor, type Combo, type Food, type FoodCategory, type MealSlot } from "@f7/content";
+import { COMBO_BY_ID, FOOD_BY_ID, FOODS, gramsFor, macrosFor, type Unit, type Combo, type Food, type FoodCategory, type MealSlot } from "@f7/content";
 import type { DraftItem } from "@/state/food";
 
 /**
@@ -46,6 +46,7 @@ export const CATEGORY_ICON: Record<FoodCategory, Icon> = {
 /** Plates and dishes we surface first for each meal. Ids not in the table are skipped silently. */
 const USUAL: Record<MealSlot, string[]> = {
   breakfast: ["idli-sambar", "dosa-sambar", "pongal-vada", "idli-vada", "poori-plate", "upma", "filter-coffee", "tea", "bread-omelette-tea", "oats-fruit", "egg", "banana"],
+  morning_snack: ["banana", "apple", "almonds", "buttermilk", "tender-coconut", "sundal", "guava", "protein-shake", "peanuts", "tea"],
   lunch: ["rice-sambar-plate", "nonveg-meals", "curd-rice-pickle", "chicken-rice-plate", "rice-rasam-plate", "chapati-kurma", "chicken-biryani", "veg-biryani", "sambar-rice", "lemon-rice", "buttermilk", "salad"],
   snacks: ["tea", "filter-coffee", "sundal", "vada", "samosa", "biscuit", "banana", "apple", "peanuts", "roasted-chana", "protein-shake", "boiled-chana"],
   dinner: ["chapati-dal", "chapati-egg", "chapati-chicken", "dosa-sambar", "idli-sambar", "parotta-salna", "kothu-egg", "chicken-curry", "rice", "curd-rice", "egg-white-omelette", "vegetable-soup"],
@@ -83,7 +84,29 @@ export function draftFromFood(food: Food, portions = 1): DraftItem {
   };
 }
 
-export function draftsFromCombo(combo: Combo): DraftItem[] {
+/** A search hit with the quantity the member typed ("2 idli", "150 g chicken", "half plate biryani"). */
+export function draftFromQty(food: Food, qty: number | null, unit: Unit | null): DraftItem {
+  if (qty === null && !unit) return draftFromFood(food);
+  const { grams, label } = gramsFor(food, qty, unit);
+  const g = Math.max(1, Math.round(grams));
+  return { ...draftFromFood(food), grams: g, portionLabel: label, ...macrosFor(food, g) };
+}
+
+/** "1 katori · 9 g protein · Amul" — the line under a search result. */
+export function hitDetail(food: Food, draft: DraftItem): string {
+  const bits = [draft.portionLabel];
+  if (draft.proteinG >= 1) bits.push(`${Math.round(draft.proteinG)} g protein`);
+  if (food.brand) bits.push(food.brand.split(" / ")[0]);
+  return bits.join(" · ");
+}
+
+export function draftsFromCombo(combo: Combo, times = 1): DraftItem[] {
+  if (times !== 1)
+    return draftsFromCombo(combo).map((d) => {
+      const f = d.foodId ? FOOD_BY_ID[d.foodId] : undefined;
+      const g = Math.round(d.grams * times);
+      return f ? { ...d, grams: g, portionLabel: portionLabel(f, g), ...macrosFor(f, g) } : d;
+    });
   return combo.parts.flatMap((p) => {
     const f = FOOD_BY_ID[p.id];
     if (!f) return [];
@@ -91,9 +114,21 @@ export function draftsFromCombo(combo: Combo): DraftItem[] {
   });
 }
 
+/** A plate with a typed count: "3 idli sambar" → 3 idlis, the usual sambar; "2 meals" → everything twice. */
+export function comboDraftsFor(combo: Combo, qty: number | null): DraftItem[] {
+  if (qty === null || qty === 1) return draftsFromCombo(combo);
+  if (!combo.countable) return draftsFromCombo(combo, qty);
+  return draftsFromCombo(combo).map((d) => {
+    if (d.foodId !== combo.countable) return d;
+    const f = FOOD_BY_ID[combo.countable!];
+    const g = Math.round(qty * f.portion.grams);
+    return { ...d, grams: g, portionLabel: portionLabel(f, g), ...macrosFor(f, g) };
+  });
+}
+
 export function portionLabel(f: Food, grams: number): string {
   const n = f.unit === "piece" ? Math.round((grams / f.portion.grams) * 2) / 2 : Math.round((grams / f.portion.grams) * 10) / 10;
-  if (f.unit === "piece") return `${n} × ${f.portion.label.replace(/^1 /, "")}`;
+  if (f.unit === "piece") return n === 1 ? f.portion.label : `${n} × ${f.portion.label.replace(/^1 /, "")}`;
   if (n === 1) return f.portion.label;
   return `${grams} ${f.category === "drink" ? "ml" : "g"}`;
 }

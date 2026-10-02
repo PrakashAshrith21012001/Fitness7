@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { usePathname } from "expo-router";
 import { Pressable, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
@@ -20,6 +21,9 @@ export function SavedToast() {
   const insets = useSafeAreaInsets();
   const { member } = useSession();
   const { lastSaved, dismissSaved, undoSaved } = useFood();
+  const path = usePathname();
+  // The tracker's own pages show their own "added · Undo" bar.
+  const ownBar = /^\/food(\/|$)/.test(path) && !/^\/food\/(add|snap|recent|activity)$/.test(path);
 
   useEffect(() => {
     if (!lastSaved) return;
@@ -27,7 +31,7 @@ export function SavedToast() {
     return () => clearTimeout(t);
   }, [lastSaved, dismissSaved]);
 
-  if (!lastSaved) return null;
+  if (!lastSaved || ownBar) return null;
   const meal = MEALS.find((m) => m.id === lastSaved.meal)?.label.toLowerCase() ?? lastSaved.meal;
   const what = member?.hideCalories ? `${lastSaved.count} item${lastSaved.count === 1 ? "" : "s"}` : `${fmtKcal(lastSaved.kcal)} kcal`;
 

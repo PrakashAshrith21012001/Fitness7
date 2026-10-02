@@ -52,7 +52,8 @@ export type LeadRow = {
   created_at: string;
 };
 
-export type MealSlot = "breakfast" | "lunch" | "snacks" | "dinner";
+/** "snacks" is the evening snack (kept for rows logged before morning snacks existed). */
+export type MealSlot = "breakfast" | "morning_snack" | "lunch" | "snacks" | "dinner";
 export type FoodSource = "table" | "model" | "photo";
 
 export type FoodLogRow = {

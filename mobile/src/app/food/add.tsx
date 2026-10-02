@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COMBOS, FOOD_BY_ID, fmtKcal, normalise, searchFoods, type Combo, type Food, type MealSlot } from "@f7/content";
+import { FOOD_BY_ID, FOODS, fmtKcal, searchFood, warmFoodSearch, type Combo, type Food, type MealSlot, type SearchHit } from "@f7/content";
 import { radius, type } from "@/theme";
 import { useColors } from "@/theme/ThemeProvider";
 import { useSession, today } from "@/state/session";
@@ -19,7 +19,7 @@ import { Body, Eyebrow, LimeButton } from "@/components/ui";
 import { ScreenHeader } from "@/components/Screen";
 import { Segmented } from "@/components/Pickers";
 import { Enter, Glass, GlassTarget, PressScale } from "@/components/motion";
-import { CATEGORY_ICON, draftFromFood, draftsFromCombo, looksLikeSentence, portionsOf, usualFor } from "@/lib/food-picks";
+import { CATEGORY_ICON, comboDraftsFor, draftFromFood, draftFromQty, draftsFromCombo, hitDetail, looksLikeSentence, portionsOf, usualFor } from "@/lib/food-picks";
 import { MEAL_SHARE } from "@/components/MealCard";
 import { Kcal } from "@/components/Kcal";
 
@@ -42,7 +42,7 @@ export default function AddFood() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ text?: string; meal?: MealSlot }>();
   const { member } = useSession();
-  const { parseText, addItems, defaultSlot, recent, totals, forDate } = useFood();
+  const { parseText, addItems, defaultSlot, recent, history, recentIds, totals, forDate } = useFood();
   const { burned } = useDay();
   const hide = !!member?.hideCalories;
 
@@ -53,6 +53,12 @@ export default function AddFood() {
   const [pending, setPending] = useState(false);
   const [askedModel, setAskedModel] = useState(false);
   const [comboCount, setComboCount] = useState<Record<string, number>>({});
+  const [vegOnly, setVegOnly] = useState(false);
+  // build the search index while the screen slides in, not on the first keystroke
+  useEffect(() => {
+    const t = setTimeout(() => warmFoodSearch(), 50);
+    return () => clearTimeout(t);
+  }, []);
   const seq = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -131,8 +137,8 @@ export default function AddFood() {
   }, []);
   const addFood = useCallback((food: Food) => addDrafts([draftFromFood(food)]), [addDrafts]);
   const addCombo = useCallback(
-    (combo: Combo) => {
-      addDrafts(draftsFromCombo(combo));
+    (combo: Combo, qty: number | null = null) => {
+      addDrafts(comboDraftsFor(combo, qty));
       setComboCount((c) => ({ ...c, [combo.id]: (c[combo.id] ?? 0) + 1 }));
     },
     [addDrafts],
@@ -188,14 +194,20 @@ export default function AddFood() {
     return sub;
   }, [navigation]);
 
-  /* ---- instant results from the table ---- */
-  const results = useMemo(() => {
-    if (query.length < 1 || sentence) return { foods: [] as Food[], combos: [] as Combo[] };
-    const key = normalise(query);
-    const combos = COMBOS.filter((c) => normalise(c.name).includes(key) || c.aliases.some((a) => normalise(a).startsWith(key))).slice(0, 4);
-    return { foods: searchFoods(query, 10), combos };
-  }, [query, sentence]);
-  const noMatch = query.length >= 3 && !sentence && results.foods.length + results.combos.length === 0;
+  /* ---- instant results: typo-tolerant, regional names, quantity-aware, ranked by what you eat ---- */
+  const search = useMemo(() => {
+    if (query.length < 1 || sentence) return null;
+    return searchFood(q, { slot, history, recent: recentIds, veg: vegOnly ? true : undefined, limit: 14 });
+  }, [q, query, sentence, slot, history, recentIds, vegOnly]);
+  const hits = search?.hits ?? [];
+  const typedQty = search?.qty ?? null;
+  const typedUnit = search?.unit ?? null;
+  const draftFor = (h: SearchHit) => (h.food ? [draftFromQty(h.food, typedQty, typedUnit)] : h.combo ? comboDraftsFor(h.combo, typedQty) : []);
+  const addHit = (h: SearchHit) => {
+    if (h.combo) addCombo(h.combo, typedQty);
+    else if (h.food) addDrafts([draftFromQty(h.food, typedQty, typedUnit)]);
+  };
+  const noMatch = query.length >= 3 && !sentence && hits.length === 0;
 
   const usual = useMemo(() => usualFor(slot), [slot]);
   const comboKcal = (c: Combo) => Math.round(draftsFromCombo(c).reduce((a, b) => a + b.kcal, 0));
@@ -253,8 +265,7 @@ export default function AddFood() {
           blurOnSubmit={false}
           onSubmitEditing={() => {
             if (sentence) addRead();
-            else if (results.combos[0]) { addCombo(results.combos[0]); setQ(""); }
-            else if (results.foods[0]) { addFood(results.foods[0]); setQ(""); }
+            else if (hits[0]) { addHit(hits[0]); setQ(""); }
             else if (noMatch) { setAskedModel(true); void runRead(query, true); }
           }}
           accessibilityLabel="What did you eat"
@@ -270,7 +281,7 @@ export default function AddFood() {
           </Pressable>
         )}
       </View>
-      {!query ? <Body size="micro" style={{ marginHorizontal: 20, marginTop: 8 }}>Type a dish, or a whole meal — “2 idli sambar, oru coffee”. Tamil names work.</Body> : null}
+      {!query ? <Body size="micro" style={{ marginHorizontal: 20, marginTop: 8 }}>Type a dish, a brand or a whole meal — “2 idli sambar, oru coffee”, “mcaloo”, “high protein snacks”. Spelling doesn't have to be right.</Body> : null}
 
       <GlassTarget targetRef={blurTarget}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: plate.length ? 150 : insets.bottom + 40 }} keyboardShouldPersistTaps="always" keyboardDismissMode="on-drag">
@@ -319,15 +330,32 @@ export default function AddFood() {
         ) : query.length ? (
           /* Instant results */
           <View>
-            {section("Tap to add", results.foods.length + results.combos.length ? `${results.foods.length + results.combos.length}` : undefined)}
-            {results.foods.length + results.combos.length ? (
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 22, marginBottom: 10 }}>
+              <Eyebrow>{search?.intent ? search.intent.label : typedQty !== null ? `Tap to add ${typedQty}${search?.unitWord ? ` ${search.unitWord}` : ""}` : "Tap to add"}</Eyebrow>
+              <Pressable onPress={() => setVegOnly((v) => !v)} accessibilityRole="switch" accessibilityState={{ checked: vegOnly }} aria-checked={vegOnly} accessibilityLabel="Vegetarian only" hitSlop={8} style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, minHeight: 30, borderRadius: radius.pill, borderWidth: 1, borderColor: vegOnly ? colors.accentBorder : colors.line, backgroundColor: vegOnly ? colors.limeSoft : "transparent" }}>
+                <View style={{ width: 10, height: 10, borderRadius: 2, borderWidth: 1.5, borderColor: "#2e9e4f", alignItems: "center", justifyContent: "center" }}>
+                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: "#2e9e4f" }} />
+                </View>
+                <Body size="micro" muted={!vegOnly} style={{ fontWeight: "600" }}>Veg only</Body>
+              </Pressable>
+            </View>
+            {search?.didYouMean && hits.length ? (
+              <Pressable onPress={() => setQ(search.didYouMean!)} accessibilityRole="button" style={{ marginBottom: 10 }}>
+                <Body size="small">Did you mean <Body size="small" style={{ color: colors.lime, fontWeight: "700" }}>{search.didYouMean}</Body>?</Body>
+              </Pressable>
+            ) : null}
+            {hits.length ? (
               <View style={listBox}>
-                {results.combos.map((c, i) => (
-                  <FoodLine key={c.id} first={i === 0} name={c.name} detail="full plate" kcal={hide ? null : comboKcal(c)} icon="restaurant-outline" count={comboCount[c.id] ?? 0} onAdd={() => addCombo(c)} />
-                ))}
-                {results.foods.map((f, i) => (
-                  <FoodLine key={f.id} first={i === 0 && !results.combos.length} name={f.name} detail={f.portion.label} kcal={hide ? null : Math.round(draftFromFood(f).kcal)} icon={CATEGORY_ICON[f.category]} count={Math.ceil(counts[f.id] ?? 0)} onAdd={() => addFood(f)} />
-                ))}
+                {hits.map((h, i) => {
+                  const drafts = draftFor(h);
+                  const kcal = Math.round(drafts.reduce((a, b) => a + b.kcal, 0));
+                  if (h.combo) {
+                    const parts = h.combo.parts.map((p) => FOOD_BY_ID[p.id]?.name.replace(/\s*\(.*?\)/g, "")).filter(Boolean);
+                    return <FoodLine key={h.id} first={i === 0} name={h.combo.name} detail={`Plate · ${parts.slice(0, 3).join(", ")}${parts.length > 3 ? ` +${parts.length - 3}` : ""}`} kcal={hide ? null : kcal} icon="restaurant-outline" count={comboCount[h.combo.id] ?? 0} onAdd={() => addHit(h)} />;
+                  }
+                  const f = h.food!;
+                  return <FoodLine key={h.id} first={i === 0} name={f.name} detail={hitDetail(f, drafts[0])} kcal={hide ? null : kcal} icon={CATEGORY_ICON[f.category]} count={Math.ceil(counts[f.id] ?? 0)} onAdd={() => addHit(h)} />;
+                })}
               </View>
             ) : noMatch ? (
               <View style={[listBox, { padding: 16 }]}>
@@ -338,6 +366,11 @@ export default function AddFood() {
             ) : (
               <Body size="small">Keep typing…</Body>
             )}
+            {hits.length && query.length >= 3 && hits[0].text < 1.05 ? (
+              <Pressable onPress={() => { setAskedModel(true); void runRead(query, true); }} accessibilityRole="button" style={{ alignSelf: "center", marginTop: 12, minHeight: 40, justifyContent: "center" }}>
+                <Body size="small">Not here? <Body size="small" style={{ color: colors.lime, fontWeight: "700" }}>Ask the assistant to read “{query}”</Body></Body>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
           /* Nothing typed yet — one-tap chips, no catalogue */
@@ -364,7 +397,7 @@ export default function AddFood() {
               </View>
             </Enter>
             <Enter index={2}>
-              <Body size="micro" style={{ marginTop: 22, textAlign: "center" }}>Anything else — just type it. 300+ Indian dishes are matched instantly; the rest is read for you.</Body>
+              <Body size="micro" style={{ marginTop: 22, textAlign: "center" }}>{`Anything else — just type it. ${FOODS.length.toLocaleString("en-IN")}+ foods from every region, brands and restaurants are matched instantly, even misspelt.`}</Body>
             </Enter>
           </View>
         )}

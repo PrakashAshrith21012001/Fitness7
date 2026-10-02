@@ -10,7 +10,12 @@
  * `matchFood` / `parseLocal` turn "2 idli sambar oru coffee" into items with
  * grams and kcal without calling any model. Only what they cannot match goes
  * to Claude (web/src/app/api/food/parse).
+ *
+ * The extended lists (regional dishes, raw ingredients, packaged brands,
+ * restaurant chains, gym food) live in ./food-data and are merged below.
  */
+
+import { EXTRA_COMBOS, EXTRA_ROWS } from "./food-data";
 
 export type FoodCategory =
   | "breakfast"
@@ -44,12 +49,25 @@ export type Food = {
   estimate?: boolean;
   /** how a bare count is read: "2 idli" → 2 × portion.grams (piece) vs "2 rice" → 2 × portion (serving) */
   unit?: "piece" | "cup" | "katori" | "glass" | "plate" | "bowl" | "serving";
+  /** brand or restaurant for packaged / chain items ("Amul", "McDonald's") */
+  brand?: string;
+  /** 0 rare … 3 everyday — breaks ties in search so "dosa" finds Dosa before Dosa batter */
+  pop: number;
+  /** other ways to measure it, first = the default portion: [{label:"1 katori", grams:150}, {label:"100 g", grams:100}] */
+  servings: { label: string; grams: number }[];
+  /** vegetarian (eggs count as non-veg here, the way members filter) */
+  veg: boolean;
+  /** where the numbers come from */
+  src: "ifct" | "usda" | "label" | "recipe";
 };
 
-// id, name, category, kcal, protein, carbs, fat, portion label, portion g, aliases, estimate, unit
-type Row = [string, string, FoodCategory, number, number, number, number, string, number, string[], boolean?, Food["unit"]?];
+/** Optional extras on a row: popularity, alternative servings, brand, source. */
+export type RowExtra = { pop?: number; servings?: [string, number][]; brand?: string; src?: Food["src"] };
 
-const R: Row[] = [
+// id, name, category, kcal, protein, carbs, fat, portion label, portion g, aliases, estimate, unit, extra
+export type Row = [string, string, FoodCategory, number, number, number, number, string, number, string[], boolean?, Food["unit"]?, RowExtra?];
+
+const BASE: Row[] = [
   /* ---------------- breakfast / tiffin ---------------- */
   ["idli", "Idli", "breakfast", 132, 3.9, 27.9, 0.4, "1 idli", 40, ["idly", "idlis", "idlies", "idlee", "rava idli"], false, "piece"],
   ["mini-idli", "Mini idli", "breakfast", 132, 3.9, 27.9, 0.4, "1 mini idli", 12, ["mini idly", "small idli", "button idli", "14 idli", "kutty idli"], true, "piece"],
@@ -134,7 +152,7 @@ const R: Row[] = [
   ["potato-fry", "Potato fry", "veg", 150, 2.2, 20.0, 7.0, "1 katori", 100, ["urulai fry", "urulaikizhangu fry", "aloo fry", "potato roast", "urulai varuval", "potato poriyal", "aloo sabzi"], true, "katori"],
   ["sundal", "Sundal (chickpea)", "snack", 140, 7.0, 20.0, 3.5, "1 cup", 100, ["kondakadalai sundal", "chana sundal", "pattani sundal", "channa sundal"], true, "cup"],
   ["chole", "Chole (chana masala)", "north", 145, 6.5, 19.0, 5.0, "1 katori", 150, ["chana masala", "channa masala", "chickpea curry", "chole masala", "kondakadalai kuzhambu"], true, "katori"],
-  ["rajma", "Rajma", "north", 130, 6.5, 19.0, 3.5, "1 katori", 150, ["rajma masala", "kidney bean curry", "rajma chawal"], true, "katori"],
+  ["rajma", "Rajma", "north", 130, 6.5, 19.0, 3.5, "1 katori", 150, ["rajma masala", "kidney bean curry"], true, "katori"],
   ["paneer-butter-masala", "Paneer butter masala", "north", 210, 8.5, 9.0, 16.0, "1 katori", 150, ["paneer masala", "butter paneer", "paneer gravy", "shahi paneer", "paneer tikka masala", "kadai paneer", "paneer curry"], true, "katori"],
   ["palak-paneer", "Palak paneer", "north", 150, 8.0, 6.0, 10.5, "1 katori", 150, ["saag paneer", "spinach paneer"], true, "katori"],
   ["paneer", "Paneer (plain)", "dairy", 265, 18.3, 1.2, 20.8, "1 katori cubes", 100, ["cottage cheese", "paneer cubes", "raw paneer", "paneer pieces", "paneer bhurji"], false, "katori"],
@@ -251,7 +269,7 @@ const R: Row[] = [
   ["whisky", "Whisky / spirits", "drink", 250, 0, 0, 0, "1 peg", 60, ["whiskey", "rum", "vodka", "brandy", "peg", "large peg", "small peg", "gin", "scotch"], false, "piece"],
   ["water", "Water", "drink", 0, 0, 0, 0, "1 glass", 250, ["thanni", "plain water", "thanneer", "pani", "glass of water", "water bottle", "mineral water", "warm water", "hot water", "ors"], false, "glass"],
   ["sugarcane-juice", "Sugarcane juice", "drink", 65, 0.2, 16.0, 0, "1 glass", 250, ["karumbu juice", "cane juice", "ganne ka ras", "karumbu"], true, "glass"],
-  ["oats-milk", "Oats with milk (drink)", "drink", 70, 2.8, 10.5, 1.8, "1 glass", 250, ["oats kanji", "oats milk", "oats drink", "oats porridge drink"], true, "glass"],
+  ["oats-milk", "Oats drink (blended in milk)", "drink", 70, 2.8, 10.5, 1.8, "1 glass", 250, ["oats kanji", "oats milk", "oats drink", "oats porridge drink"], true, "glass"],
   ["black-coffee-sugar", "Black coffee with sugar", "drink", 18, 0.1, 4.5, 0, "1 cup", 150, ["black coffee sugar", "black coffee with sugar", "sugar black coffee"], true, "cup"],
 
   /* ---------------- fruit ---------------- */
@@ -306,7 +324,7 @@ const R: Row[] = [
   ["vada-pav", "Vada pav", "fastfood", 290, 6.0, 40.0, 12.0, "1 vada pav", 130, ["vadapav", "wada pav"], true, "piece"],
   ["pav-bhaji", "Pav bhaji", "fastfood", 155, 3.5, 22.0, 6.0, "1 plate (2 pav)", 300, ["pav bhaji plate", "bhaji pav", "pao bhaji"], true, "plate"],
   ["sandwich", "Vegetable sandwich", "fastfood", 220, 6.5, 32.0, 7.5, "1 sandwich", 140, ["veg sandwich", "bread sandwich", "grilled sandwich", "club sandwich", "sandwiches", "cheese sandwich", "toast sandwich", "bombay sandwich", "sandwich grilled"], true, "piece"],
-  ["chicken-sandwich", "Chicken sandwich", "fastfood", 230, 12.0, 28.0, 8.0, "1 sandwich", 160, ["chicken sub", "subway chicken", "chicken grilled sandwich", "egg sandwich", "subway"], true, "piece"],
+  ["chicken-sandwich", "Chicken sandwich", "fastfood", 230, 12.0, 28.0, 8.0, "1 sandwich", 160, ["chicken sub", "subway chicken", "chicken grilled sandwich", "egg sandwich"], true, "piece"],
   ["burger", "Veg burger", "fastfood", 250, 6.0, 33.0, 10.0, "1 burger", 150, ["veg burger", "aloo tikki burger", "mcaloo tikki", "mcaloo", "burger"], true, "piece"],
   ["chicken-burger", "Chicken burger", "fastfood", 265, 13.0, 30.0, 10.5, "1 burger", 180, ["mcchicken", "zinger", "chicken burger", "zinger burger", "whopper", "burger chicken"], true, "piece"],
   ["pizza", "Pizza (regular slice)", "fastfood", 265, 11.0, 32.0, 10.0, "1 slice", 100, ["pizza", "pizza slice", "dominos", "margherita", "cheese pizza", "veg pizza", "chicken pizza", "pizza hut", "pizza slices", "paneer pizza"], true, "piece"],
@@ -399,16 +417,141 @@ function autoAlias(name: string): string[] {
 /** A bare word that could mean several dishes: pick the everyday one, but flag it. */
 const AMBIGUOUS: Record<string, string> = { chicken: "chicken-curry", mutton: "mutton-curry", fish: "fish-curry", prawn: "prawn-masala", crab: "crab-masala", salad: "salad", pizza: "pizza", biryani: "chicken-biryani", kurma: "veg-kurma", curry: "mixed-veg-curry", gravy: "veg-kurma", noodles: "noodles", juice: "fruit-juice", shake: "banana-milkshake", soup: "vegetable-soup", nuts: "mixed-nuts", fruit: "fruit-bowl", fruits: "fruit-bowl", sweet: "sweet", sweets: "sweet", biscuit: "biscuit", chips: "chips", cake: "cake", chocolate: "chocolate", bread: "bread", roti: "chapati", paratha: "paratha", sabzi: "poriyal", rice: "rice", dal: "dal", egg: "egg", coffee: "filter-coffee", tea: "tea", milk: "milk", curd: "curd", paneer: "paneer" };
 
-export const FOODS: Food[] = R.map(([id, name, category, kcal, protein, carbs, fat, label, grams, aliases, estimate, unit]) => ({
-  id,
-  name,
-  category,
-  per100: { kcal, protein, carbs, fat },
-  portion: { label, grams },
-  aliases: Array.from(new Set([...aliases, ...autoAlias(name)])),
-  estimate: estimate ?? true,
-  unit: unit ?? "serving",
-}));
+/** The table: the hand-checked base first, then the extended lists (base wins on a duplicate id). */
+const R: Row[] = (() => {
+  const seen = new Set<string>();
+  const out: Row[] = [];
+  for (const r of [...BASE, ...EXTRA_ROWS]) {
+    if (seen.has(r[0])) continue;
+    seen.add(r[0]);
+    out.push(r);
+  }
+  return out;
+})();
+
+const BASE_IDS = new Set(BASE.map((r) => r[0]));
+const NONVEG_WORD = /\b(chicken|mutton|lamb|goat|fish|prawn|shrimp|crab|squid|egg|eggs|omelette|beef|pork|keema|kheema|nethili|meen|kozhi|murgh|anda|liver|bacon|ham|salami|sausage|pepperoni|tuna|salmon|seer|pomfret|sardine|mackerel|anchovy|lobster|oyster|clam|mussel|duck|turkey|quail|kaadai|nandu|eral|era|chemmeen|kheema|haleem|nihari|paya|bheja|kebab|tikka|tandoori chicken|biryani chicken|shawarma)(s|es)?\b/i;
+const VEG_OVERRIDE = /\b(veg|paneer|soya|tofu|mushroom|gobi|aloo|chana|rajma|dal|egg-?less|eggless|vegan|jackfruit)\b/i;
+
+function isVeg(id: string, name: string, category: FoodCategory): boolean {
+  if (category === "nonveg" || category === "egg") return false;
+  const text = `${id.replace(/-/g, " ")} ${name}`;
+  if (NONVEG_WORD.test(text) && !(VEG_OVERRIDE.test(text) && !/\b(chicken|mutton|fish|prawn|egg)\b/i.test(text))) return false;
+  return true;
+}
+
+/** Sensible extra servings when a row doesn't list its own. */
+function defaultServings(label: string, grams: number, unit: Food["unit"], category: FoodCategory): [string, number][] {
+  const out: [string, number][] = [[label, grams]];
+  const liquid = category === "drink";
+  const u = liquid ? "ml" : "g";
+  if (unit === "piece") {
+    out.push([`2 × ${label.replace(/^1 /, "")}`, grams * 2]);
+  } else if (unit === "katori" || unit === "bowl") {
+    out.push(["½ katori", Math.round(grams / 2)], ["1 cup (200 g)", 200]);
+  } else if (unit === "cup" || unit === "glass") {
+    out.push([liquid ? "1 small glass (150 ml)" : "½ cup", liquid ? 150 : Math.round(grams / 2)], [liquid ? "1 large glass (300 ml)" : "1 large cup", liquid ? 300 : Math.round(grams * 1.5)]);
+  } else if (unit === "plate") {
+    out.push(["½ plate", Math.round(grams / 2)]);
+  }
+  if (category === "condiment" || category === "nuts") out.push(["1 tbsp", 15], ["1 tsp", 5]);
+  out.push([`100 ${u}`, 100]);
+  const seen = new Set<string>();
+  return out.filter(([l, g]) => g > 0 && !seen.has(`${g}`) && seen.add(`${g}`) && !!l);
+}
+
+/**
+ * Who owns a phrase. A specific dish always owns its own name: the old base
+ * rows used some specific names as loose aliases ("jalebi" on gulab jamun,
+ * "kadai paneer" on paneer butter masala, "mcaloo tikki" on veg burger).
+ * (1) any base alias that an extended row also uses moves to that row;
+ * (2) MOVE pins the cases where the specific row spells it differently.
+ */
+const MOVE: Record<string, string> = {
+  // chains & brands
+  "mcaloo tikki": "mcd-mcaloo-tikki", mcaloo: "mcd-mcaloo-tikki", "mc aloo tikki": "mcd-mcaloo-tikki",
+  mcchicken: "mcd-mcchicken", "mc chicken": "mcd-mcchicken", zinger: "kfc-zinger", "zinger burger": "kfc-zinger", whopper: "bk-chicken-whopper",
+  dominos: "dom-margherita", margherita: "dom-margherita", "margherita pizza": "dom-margherita", kfc: "kfc-hot-crispy", "kfc chicken": "kfc-hot-crispy",
+  "mcdonalds fries": "mcd-fries", "mcd fries": "mcd-fries",
+  "parle g": "parle-g", "good day": "britannia-good-day-cashew", "goodday": "britannia-good-day-cashew", "dairy milk": "cadbury-dairy-milk", silk: "cadbury-dairy-milk-silk",
+  kitkat: "nestle-kitkat", "kit kat": "nestle-kitkat", "5 star": "cadbury-5-star", "five star": "cadbury-5-star", "thums up": "thums-up-regular", "thumbs up": "thums-up-regular", coke: "coca-cola-regular", "coca cola": "coca-cola-regular",
+  // juice shop & bakery
+  "watermelon juice": "juice-watermelon", "mosambi juice": "juice-mosambi", "sweet lime juice": "juice-mosambi", "pineapple juice": "juice-pineapple", "orange juice": "juice-orange",
+  "rose milk": "juice-rose-milk", jigarthanda: "madurai-jigarthanda", "jigar thanda": "madurai-jigarthanda",
+  "tandoori chicken": "tandoori-chicken", "chicken 65": "chicken-65", "cream bun": "bakery-cream-bun", dilpasand: "bakery-dil-pasand", "dil pasand": "bakery-dil-pasand",
+  "fruit salad": "fruit-salad-ice-cream", "black forest": "black-forest-pastry", "black forest cake": "black-forest-pastry",
+  // South
+  "vatha kuzhambu": "sundakkai-vathal-kuzhambu", "vathal kuzhambu": "sundakkai-vathal-kuzhambu", "vathakuzhambu": "sundakkai-vathal-kuzhambu",
+  "rava idli": "rava-idli-mtr", "chicken kothu parotta": "chicken-kothu-parotta", "chicken kothu": "chicken-kothu-parotta",
+  palkova: "srivilliputhur-palkova", "paal kova": "srivilliputhur-palkova", "tirunelveli halwa": "tirunelveli-iruttukadai-halwa", "gajar halwa": "gajar-halwa", "carrot halwa": "gajar-halwa",
+  jalebi: "jalebi", jilebi: "jalebi", jangiri: "jalebi", jalabi: "jalebi",
+  // ingredients
+  "sabja seeds": "sabja-seeds", "basil seeds": "sabja-seeds", blueberries: "blueberries", blueberry: "blueberries",
+  poovan: "poovan-banana", "poovan pazham": "poovan-banana", nendran: "nendran-banana", "nendran pazham": "nendran-banana", robusta: "robusta-banana", yelakki: "elaichi-banana", "elaichi banana": "elaichi-banana",
+  "groundnut oil": "groundnut-oil", "peanut oil": "groundnut-oil", "kadalai ennai": "groundnut-oil", "gingelly oil": "gingelly-oil", "sesame oil": "gingelly-oil", "nallennai": "gingelly-oil",
+  "coconut oil": "coconut-oil", "thengai ennai": "coconut-oil", "sunflower oil": "sunflower-oil", "olive oil": "olive-oil",
+  // base clean-ups
+  "chilli chicken": "chilli-chicken-dry", pongal: "pongal", subway: "sub-chicken-tikka", "subway chicken": "sub-chicken-tikka", "cold coffee": "chocolate-shake", "gobi manchurian": "manchurian", "veg manchurian": "manchurian",
+  "poori masala": "poori-masala", kichdi: "khichdi", "cabbage poriyal": "cabbage-poriyal", "beans poriyal": "beans-poriyal", "beetroot poriyal": "beetroot-poriyal",
+  "chicken salna": "chicken-curry", "lime water": "lime-water", "oats with milk": "oats", "oats milk": "oats", "oats kanji": "oats", "chicken tikka": "chicken-tikka",
+  "white sauce pasta": "penne-alfredo", "alfredo pasta": "penne-alfredo", "red sauce pasta": "penne-arrabbiata", "arrabiata pasta": "penne-arrabbiata",
+  "mac and cheese": "mac-cheese-baked", "mushroom soup": "cream-of-mushroom-soup", "tomato soup": "cream-of-tomato-soup", "club sandwich": "veg-club-sandwich",
+};
+/** A bare generic word on a specific row ("chicken" on chicken lasagna) — only the everyday food keeps it. */
+const GENERIC_OWNER: Record<string, string> = {
+  chicken: "chicken-curry", mutton: "mutton-curry", fish: "fish-curry", prawn: "prawn-masala", prawns: "prawn-masala", egg: "egg", eggs: "egg", rice: "rice", milk: "milk", curd: "curd", dal: "dal",
+  tea: "tea", coffee: "filter-coffee", paneer: "paneer", bread: "bread", juice: "fruit-juice", soup: "vegetable-soup", salad: "salad", sugar: "sugar", oil: "oil", banana: "banana", biryani: "chicken-biryani",
+  chapati: "chapati", roti: "chapati", dosa: "dosa", idli: "idli", oats: "oats", pasta: "pasta", pizza: "pizza", burger: "burger", noodles: "noodles", sandwich: "sandwich", cake: "cake", biscuit: "biscuit", chocolate: "chocolate",
+  meals: "rice-sambar-plate", butter: "butter", ghee: "ghee", water: "water", whey: "whey", protein: "protein-shake",
+};
+
+// wrong labels on milk packets
+const DROP_ALIAS = new Set(["aavin green", "aavin blue", "full meals", "south indian meals", "saapadu", "unlimited meals", "veg meals", "hotel meals", "gym meal"]);
+
+const normKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+const EXTRA_NAMES = new Set(EXTRA_ROWS.map((r) => normKey(r[1].replace(/\s*\(.*?\)/g, ""))));
+const BASE_KEYS = new Set(BASE.flatMap((r) => [r[1].replace(/\s*\(.*?\)/g, ""), ...r[9]].map(normKey)));
+const EXTRA_KEYS = new Set(EXTRA_ROWS.flatMap((r) => [r[1].replace(/\s*\(.*?\)/g, ""), ...autoAlias(r[1]), ...r[9]].map(normKey)));
+
+const BUILT: Food[] = R.map(([id, name, category, kcal, protein, carbs, fat, label, grams, aliases, estimate, unit, x]) => {
+  const u = unit ?? "serving";
+  const servings = (x?.servings && x.servings.length ? [[label, grams] as [string, number], ...x.servings.filter(([, g]) => g !== grams)] : defaultServings(label, grams, u, category)).map(([l, g]) => ({ label: l, grams: g }));
+  return {
+    id,
+    name,
+    category,
+    per100: { kcal, protein, carbs, fat },
+    portion: { label, grams },
+    aliases: Array.from(new Set([...aliases, ...autoAlias(name)])),
+    estimate: estimate ?? true,
+    unit: u,
+    brand: x?.brand,
+    pop: x?.pop ?? (BASE_IDS.has(id) ? 2 : 1),
+    servings,
+    veg: isVeg(id, name, category),
+    src: x?.src ?? (x?.brand ? "label" : estimate === false ? "ifct" : "recipe"),
+  };
+});
+
+export const FOODS: Food[] = (() => {
+  const ids = new Set(BUILT.map((f) => f.id));
+  const gain: Record<string, string[]> = {};
+  for (const [alias, to] of Object.entries(MOVE)) if (ids.has(to)) (gain[to] ??= []).push(alias);
+  return BUILT.map((f) => {
+    const keep = f.aliases.filter((a) => {
+      const k = normKey(a);
+      if (DROP_ALIAS.has(k)) return false;
+      if (k in GENERIC_OWNER && GENERIC_OWNER[k] !== f.id) return false;
+      if (BASE_IDS.has(f.id) && !k.includes(" ") && EXTRA_NAMES.has(k)) return false; // "kulfi" belongs to the Kulfi row
+      if (k in MOVE && MOVE[k] !== f.id && ids.has(MOVE[k])) return false;
+      // a specific dish takes a multi-word name from a base row; a single word ("pongal") stays with the everyday food
+      if (BASE_IDS.has(f.id) && EXTRA_KEYS.has(k) && k !== normKey(f.name) && k.includes(" ")) return false;
+      if (!BASE_IDS.has(f.id) && !k.includes(" ") && BASE_KEYS.has(k) && k !== normKey(f.name.replace(/\s*\(.*?\)/g, ""))) return false;
+      return true;
+    });
+    return { ...f, aliases: Array.from(new Set([...keep, ...(gain[f.id] ?? [])])) };
+  });
+})();
 
 export const FOOD_BY_ID: Record<string, Food> = Object.fromEntries(FOODS.map((f) => [f.id, f]));
 
@@ -425,7 +568,7 @@ export type Combo = {
   countable?: string;
 };
 
-export const COMBOS: Combo[] = [
+const BASE_COMBOS: Combo[] = [
   { id: "idli-sambar", name: "Idli, sambar & chutney", aliases: ["idli sambar", "idli sambar chutney", "idli sambhar", "idli with sambar", "idly sambar", "idli chutney", "idly chutney", "idli plate", "idly plate", "idli with chutney", "idli and sambar", "idli set", "idli tiffin"], parts: [{ id: "idli", grams: 120 }, { id: "sambar", grams: 150 }, { id: "chutney", grams: 40 }], countable: "idli" },
   { id: "idli-vada", name: "Idli & vada with sambar", aliases: ["idli vada", "idli vadai", "idly vada", "idli vada sambar", "idli and vada", "idli with vada", "idly vadai", "idli vada chutney"], parts: [{ id: "idli", grams: 80 }, { id: "vada", grams: 45 }, { id: "sambar", grams: 150 }], countable: "idli" },
   { id: "idli-podi", name: "Idli with podi & oil", aliases: ["idli podi", "podi idli", "idli with podi", "idly podi", "podi idly", "idli podi oil"], parts: [{ id: "idli", grams: 120 }, { id: "podi", grams: 15 }], countable: "idli" },
@@ -454,6 +597,12 @@ export const COMBOS: Combo[] = [
   { id: "kothu-egg", name: "Egg kothu parotta", aliases: ["egg kothu parotta", "muttai kothu", "egg kothu", "muttai kothu parotta", "kothu parotta egg", "egg kothu porotta"], parts: [{ id: "kothu-parotta", grams: 300 }, { id: "egg", grams: 50 }] },
 ];
 
+export const COMBOS: Combo[] = (() => {
+  const ids = new Set(FOODS.map((f) => f.id));
+  const seen = new Set<string>();
+  return [...BASE_COMBOS, ...EXTRA_COMBOS].filter((c) => !seen.has(c.id) && seen.add(c.id) && c.parts.every((p) => ids.has(p.id)));
+})();
+
 export const COMBO_BY_ID: Record<string, Combo> = Object.fromEntries(COMBOS.map((c) => [c.id, c]));
 
 export type Macros = { kcal: number; proteinG: number; carbsG: number; fatG: number };
@@ -472,7 +621,7 @@ export function macrosFor(food: Food, grams: number): Macros {
 /* Normalisation                                                      */
 /* ------------------------------------------------------------------ */
 
-const STOP = new Set(["a", "an", "the", "of", "some", "with", "and", "plus", "had", "ate", "eat", "for", "my", "i", "me", "in", "at", "along", "then", "also", "little", "bit", "small", "big", "large", "medium", "regular", "hot", "cold", "fresh", "homemade", "home", "made", "full", "after", "before", "post", "pre", "gym", "workout", "today", "yesterday", "tonight", "office", "canteen", "hotel", "mess", "outside", "just", "only", "again", "morn", "time", "later", "now", "about", "around", "approx", "roughly", "nearly"]);
+export const STOP = new Set(["a", "an", "the", "of", "some", "with", "and", "plus", "had", "ate", "eat", "for", "my", "i", "me", "in", "at", "along", "then", "also", "little", "bit", "small", "big", "large", "medium", "regular", "hot", "cold", "fresh", "homemade", "home", "made", "full", "after", "before", "post", "pre", "gym", "workout", "today", "yesterday", "tonight", "office", "canteen", "hotel", "mess", "outside", "just", "only", "again", "morn", "time", "later", "now", "about", "around", "approx", "roughly", "nearly"]);
 
 export function normalise(s: string): string {
   return s
@@ -485,7 +634,7 @@ export function normalise(s: string): string {
 }
 
 function singular(w: string): string {
-  if (w.length <= 3) return w;
+  if (w.length <= 3 || w === "oats" || w === "chips" || w === "fries") return w;
   if (/(ies)$/.test(w)) return w.replace(/ies$/, "y");
   if (/(ches|shes|sses|xes)$/.test(w)) return w.slice(0, -2);
   if (/s$/.test(w) && !/ss$/.test(w) && !/us$/.test(w)) return w.slice(0, -1);
@@ -493,7 +642,7 @@ function singular(w: string): string {
 }
 
 /** Tokens for matching: lower-case, singular, common spelling folds. */
-function tokens(s: string): string[] {
+export function tokens(s: string): string[] {
   return normalise(s)
     .split(" ")
     .filter(Boolean)
@@ -566,8 +715,41 @@ function fold(w: string): string {
     .replace(/^ladoo$/, "laddu")
     .replace(/^laddoo$/, "laddu")
     .replace(/^jamoon$/, "jamun")
-    .replace(/^kichadi$/, "kichadi");
+    .replace(/^kichadi$/, "kichadi")
+    .replace(SYN_RE, (m) => SYN[m] ?? m);
 }
+
+/**
+ * Regional words folded onto one search word, both in the table and in what
+ * the member types — so "aloo", "urulai" and "batata" all find potato dishes.
+ */
+const SYN: Record<string, string> = {
+  aloo: "potato", alu: "potato", aaloo: "potato", urulai: "potato", urulaikizhangu: "potato", batata: "potato", bateta: "potato", alugadde: "potato", bangaladumpa: "potato",
+  gobi: "cauliflower", gobhi: "cauliflower", phoolgobi: "cauliflower", cauli: "cauliflower",
+  palak: "spinach", pasalai: "spinach", saag: "spinach",
+  baingan: "brinjal", baigan: "brinjal", kathirikai: "brinjal", kathirikkai: "brinjal", vankaya: "brinjal", badanekai: "brinjal", eggplant: "brinjal", aubergine: "brinjal",
+  matar: "peas", mattar: "peas", mutter: "peas", pattani: "peas", batani: "peas", pea: "peas",
+  murg: "chicken", murgh: "chicken", kodi: "chicken", koli: "chicken",
+  gosht: "mutton", ghosht: "mutton", mamsam: "mutton", maamsam: "mutton", lamb: "mutton",
+  machli: "fish", machhi: "fish", machher: "fish", chepa: "fish", meenu: "fish",
+  jhinga: "prawn", chemmeen: "prawn", royyalu: "prawn", shrimps: "prawn",
+  chawal: "rice", chaval: "rice", bhaat: "rice", bhat: "rice", annam: "rice", oota: "rice",
+  doodh: "milk", dudh: "milk", haalu: "milk", paalu: "milk",
+  makhan: "butter", makkhan: "butter", vennai: "butter", benne: "butter",
+  kela: "banana", kele: "banana", pazham: "banana", vazhaipazham: "banana", arati: "banana",
+  seb: "apple", aam: "mango", maambazham: "mango", mambazham: "mango",
+  pyaz: "onion", pyaaz: "onion", vengayam: "onion", kanda: "onion", eerulli: "onion",
+  tamatar: "tomato", thakkali: "tomato", tamato: "tomato", tamoto: "tomato",
+  bhindi: "okra", vendakkai: "okra", bendakaya: "okra", ladyfinger: "okra",
+  dahl: "dal", daal: "dal", dhal: "dal", paruppu: "dal", pappu: "dal",
+  kheera: "cucumber", vellarikai: "cucumber",
+  gajar: "carrot", nimbu: "lemon", elumichai: "lemon", lime: "lemon",
+  biriyani: "biryani", briyani: "biryani", biriani: "biryani", biryanii: "biryani",
+  panir: "paneer", paner: "paneer", pannir: "paneer", panner: "paneer", paneeer: "paneer",
+  chiken: "chicken", chikken: "chicken", chickn: "chicken", chicen: "chicken",
+  mutten: "mutton", muton: "mutton",
+};
+const SYN_RE = new RegExp(`^(${Object.keys(SYN).join("|")})$`);
 
 /* ------------------------------------------------------------------ */
 /* Index                                                              */
@@ -640,13 +822,40 @@ export function matchFood(phrase: string): Match | null {
     else if (all) consider(mk(e, 0.85 + Math.min(0.1, 0.03 * e.toks.length))); // alias inside the phrase
     else if (rev) consider(mk(e, 0.8 - 0.02 * (e.toks.length - toks.length))); // phrase inside the alias — weaker
   }
-  if (best && (best as Match).score >= 0.85) return best;
+  if (best && (best as Match).score >= 0.85) {
+    // a partial hit ("butter" inside "panner butter masala") loses to a full fuzzy match of every word
+    if ((best as Match).score < 0.98 && fuzzyHook) {
+      const f = fuzzyHook(phrase);
+      if (f && f.score >= 0.98 && f.id !== (best as Match).id) {
+        const food = f.kind === "food" ? FOOD_BY_ID[f.id] : undefined;
+        const combo = f.kind === "combo" ? COMBO_BY_ID[f.id] : undefined;
+        if (food || combo) return { kind: f.kind, food, combo, id: f.id, score: 0.9, matchedKey: key };
+      }
+    }
+    return best;
+  }
 
   for (const e of INDEX) {
     const sc = dice(key, e.key);
     if (sc >= 0.72) consider(mk(e, Math.min(0.84, sc)));
   }
+  // typos and regional spellings the table doesn't list — the search engine's fuzzy match
+  if ((!best || (best as Match).score < 0.85) && fuzzyHook) {
+    const f = fuzzyHook(phrase);
+    if (f && f.score >= 0.8) {
+      const food = f.kind === "food" ? FOOD_BY_ID[f.id] : undefined;
+      const combo = f.kind === "combo" ? COMBO_BY_ID[f.id] : undefined;
+      if (food || combo) consider({ kind: f.kind, food, combo, id: f.id, score: f.score >= 0.98 ? 0.9 : Math.min(0.82, f.score - 0.1), matchedKey: key });
+    }
+  }
   return best;
+}
+
+type FuzzyHook = (phrase: string) => { kind: "food" | "combo"; id: string; score: number } | null;
+let fuzzyHook: FuzzyHook | null = null;
+/** The search engine (./food-search) registers its fuzzy matcher here so sentences get typo tolerance too. */
+export function registerFuzzy(fn: FuzzyHook) {
+  fuzzyHook = fn;
 }
 
 const NUM_WORDS: Record<string, number> = {
@@ -658,8 +867,8 @@ const NUM_WORDS: Record<string, number> = {
   ek: 1, do: 2, teen: 3, char: 4, aadha: 0.5, adha: 0.5,
 };
 
-type Unit = { g?: number; ml?: number; kind: "piece" | "cup" | "katori" | "glass" | "plate" | "bowl" | "spoon" | "grams" | "ml" | "scoop" | "ladle" | "slice" | "handful" | "packet" | "peg" | "can" };
-const UNITS: Record<string, Unit> = {
+export type Unit = { g?: number; ml?: number; kind: "piece" | "cup" | "katori" | "glass" | "plate" | "bowl" | "spoon" | "grams" | "ml" | "scoop" | "ladle" | "slice" | "handful" | "packet" | "peg" | "can" };
+export const UNITS: Record<string, Unit> = {
   piece: { kind: "piece" }, pieces: { kind: "piece" }, pc: { kind: "piece" }, pcs: { kind: "piece" }, nos: { kind: "piece" }, no: { kind: "piece" }, numbers: { kind: "piece" }, number: { kind: "piece" },
   cup: { kind: "cup", g: 150 }, cups: { kind: "cup", g: 150 }, tumbler: { kind: "cup", g: 120 },
   katori: { kind: "katori", g: 150 }, katoris: { kind: "katori", g: 150 }, kinnam: { kind: "katori", g: 150 },
@@ -785,7 +994,7 @@ export function splitFragments(text: string): string[] {
  * "2 idli", "idli 2", "oru cup coffee", "150 g chicken", "half plate biryani",
  * "chicken curry 1 katori" → { qty, unit, rest }
  */
-function readQuantity(fragment: string): { qty: number | null; unit: Unit | null; unitWord: string | null; rest: string } {
+export function readQuantity(fragment: string): { qty: number | null; unit: Unit | null; unitWord: string | null; rest: string } {
   const words = fragment.split(" ").filter(Boolean);
   let qty: number | null = null;
   let unit: Unit | null = null;
@@ -956,17 +1165,24 @@ export function parseLocal(text: string): ParseResult {
 }
 
 /** Meal slot from the clock, for when the text doesn't say. */
-export function slotForHour(h: number): "breakfast" | "lunch" | "snacks" | "dinner" {
-  if (h >= 5 && h <= 10) return "breakfast";
-  if (h >= 11 && h <= 15) return "lunch";
+export function slotForHour(h: number): "breakfast" | "morning_snack" | "lunch" | "snacks" | "dinner" {
+  if (h >= 4 && h <= 9) return "breakfast";
+  if (h >= 10 && h <= 11) return "morning_snack";
+  if (h >= 12 && h <= 15) return "lunch";
   if (h >= 16 && h <= 18) return "snacks";
   return "dinner";
 }
 
-/** Suggestions for the "swap" control: same category, best first. */
+/** Suggestions for the "swap" control: same category, close names, common and unbranded first. */
 export function similarFoods(food: Food, n = 5): Food[] {
-  return FOODS.filter((f) => f.category === food.category && f.id !== food.id)
-    .map((f) => ({ f, s: dice(f.name.toLowerCase(), food.name.toLowerCase()) }))
+  const base = food.name.toLowerCase().replace(/\s*\(.*?\)/g, "");
+  const words = new Set(base.split(/\W+/).filter((w) => w.length > 2));
+  return FOODS.filter((f) => f.category === food.category && f.id !== food.id && (!f.brand || f.brand === food.brand))
+    .map((f) => {
+      const name = f.name.toLowerCase();
+      const shared = name.split(/\W+/).filter((w) => words.has(w)).length;
+      return { f, s: dice(name, base) + shared * 0.25 + f.pop * 0.06 };
+    })
     .sort((a, b) => b.s - a.s)
     .slice(0, n)
     .map((x) => x.f);

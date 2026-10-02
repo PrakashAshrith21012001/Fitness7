@@ -36,7 +36,9 @@ export type Booking = {
 
 export type Memory = { id: string; bookingId: string; date: string; time: string; classId: string; photo: string };
 
-type State = { bookings: Booking[] };
+export type Health = { apple: boolean; fitbit: boolean; sleep: { date: string; hours: number }[] };
+type State = { bookings: Booking[]; target: number; health: Health };
+const HEALTH0: Health = { apple: false, fitbit: false, sleep: [] };
 
 type Ctx = {
   bookings: Booking[];
@@ -53,6 +55,16 @@ type Ctx = {
   /** attended sessions (+ plain check-ins with no booking) — the number on MY PROFILE */
   workoutsTotal: number;
   weeksActive: number;
+  /** longest run of consecutive active weeks */
+  longestWeeks: number;
+  /** days since the current streak began (the "N day streak" pill) */
+  streakDays: number;
+  /** weekly goal (the pencil on the 0/3 arc) */
+  setTarget: (n: number) => Promise<void>;
+  /** Fitness Devices sheet — connected health apps + manual sleep */
+  health: Health;
+  setHealth: (p: Partial<Health>) => Promise<void>;
+  logSleep: (hours: number) => Promise<void>;
   /** attended this ISO week, and the target */
   thisWeek: { done: number; target: number };
   /** muscles trained in the week containing `date` */
@@ -121,7 +133,7 @@ function upcomingSeed(): Booking[] {
 
 export function BookingsProvider({ children }: { children: ReactNode }) {
   const { member, ready } = useSession();
-  const [state, setState] = useState<State>({ bookings: [] });
+  const [state, setState] = useState<State>({ bookings: [], target: 3, health: HEALTH0 });
   const [seeded, setSeeded] = useState(false);
   const loaded = useRef(false);
 
@@ -131,12 +143,12 @@ export function BookingsProvider({ children }: { children: ReactNode }) {
       try {
         const v = await AsyncStorage.getItem(KEY);
         if (v) {
-          const s = JSON.parse(v) as State & { seeded?: boolean };
-          setState({ bookings: s.bookings ?? [] });
+          const s = JSON.parse(v) as Partial<State> & { seeded?: boolean };
+          setState({ bookings: s.bookings ?? [], target: s.target ?? 3, health: { ...HEALTH0, ...(s.health ?? {}) } });
           setSeeded(!!s.seeded);
         } else if (member) {
           const bookings = [...seed(), ...upcomingSeed()];
-          setState({ bookings });
+          setState({ bookings, target: 3, health: HEALTH0 });
           setSeeded(true);
           await AsyncStorage.setItem(KEY, JSON.stringify({ bookings, seeded: true }));
         }
@@ -150,22 +162,34 @@ export function BookingsProvider({ children }: { children: ReactNode }) {
   // sign-out clears the demo history
   useEffect(() => {
     if (ready && !member && loaded.current) {
-      setState({ bookings: [] });
+      setState({ bookings: [], target: 3, health: HEALTH0 });
       setSeeded(false);
       AsyncStorage.removeItem(KEY).catch(() => {});
     }
   }, [ready, member]);
 
-  const persist = useCallback(
-    async (bookings: Booking[]) => {
-      setState({ bookings });
-      await AsyncStorage.setItem(KEY, JSON.stringify({ bookings, seeded })).catch(() => {});
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const save = useCallback(
+    async (next: State) => {
+      stateRef.current = next;
+      setState(next);
+      await AsyncStorage.setItem(KEY, JSON.stringify({ ...next, seeded })).catch(() => {});
     },
     [seeded],
   );
-
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const persist = useCallback((bookings: Booking[]) => save({ ...stateRef.current, bookings }), [save]);
+  const setTarget = useCallback((n: number) => save({ ...stateRef.current, target: Math.max(1, Math.min(7, n)) }), [save]);
+  const setHealth = useCallback((p: Partial<Health>) => save({ ...stateRef.current, health: { ...stateRef.current.health, ...p } }), [save]);
+  const logSleep = useCallback(
+    (hours: number) => {
+      const t = today();
+      const sleep = [{ date: t, hours }, ...stateRef.current.health.sleep.filter((x) => x.date !== t)].slice(0, 60);
+      return save({ ...stateRef.current, health: { ...stateRef.current.health, sleep } });
+    },
+    [save],
+  );
 
   const book = useCallback(
     async (classId: string, date: string, time: string) => {
@@ -218,6 +242,19 @@ export function BookingsProvider({ children }: { children: ReactNode }) {
       weeksActive += 1;
       cursor = addDays(cursor, -7);
     }
+    // the streak began in the week after `cursor`; count days from its first session
+    const streakStartWeek = addDays(cursor, 7);
+    const firstInStreak = [...allDates].filter((d) => d >= streakStartWeek).sort()[0];
+    const streakDays = weeksActive && firstInStreak ? Math.round((new Date(t + "T12:00:00").getTime() - new Date(firstInStreak + "T12:00:00").getTime()) / 86400000) + 1 : 0;
+    // longest run of consecutive weeks
+    let longestWeeks = 0;
+    let run = 0;
+    let prev: string | null = null;
+    for (const w of [...weeks].sort()) {
+      run = prev && addDays(prev, 7) === w ? run + 1 : 1;
+      longestWeeks = Math.max(longestWeeks, run);
+      prev = w;
+    }
     const ws = weekStartOf(t);
     const doneThisWeek = past.filter((b) => b.date >= ws && b.date <= addDays(ws, 6)).length;
     const attendedIn = (from: string, to: string) => past.filter((b) => b.date >= from && b.date <= to);
@@ -244,13 +281,19 @@ export function BookingsProvider({ children }: { children: ReactNode }) {
       invite,
       workoutsTotal,
       weeksActive,
-      thisWeek: { done: doneThisWeek, target: 3 },
+      longestWeeks,
+      streakDays,
+      setTarget,
+      health: state.health,
+      setHealth,
+      logSleep,
+      thisWeek: { done: doneThisWeek, target: state.target },
       musclesFor,
       attendedIn,
       memories,
       seeded,
     };
-  }, [state, member?.checkins, book, cancel, dropout, markAttendance, setReminder, invite, seeded]);
+  }, [state, member?.checkins, book, cancel, dropout, markAttendance, setReminder, invite, seeded, setTarget, setHealth, logSleep]);
 
   return <BookingsCtx.Provider value={value}>{children}</BookingsCtx.Provider>;
 }

@@ -68,7 +68,7 @@ export default function RecentFood() {
                   key={`${it.foodId ?? it.name}-${i}`}
                   onPress={() => toggle(i)}
                   accessibilityRole="checkbox"
-                  accessibilityState={{ checked: on }}
+                  accessibilityState={{ checked: on }} aria-checked={on}
                   accessibilityLabel={`${it.name}, ${it.portionLabel}`}
                   style={({ pressed }) => [
                     { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, minHeight: 56, borderTopWidth: i ? 1 : 0, borderTopColor: colors.line },

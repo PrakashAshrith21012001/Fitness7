@@ -36,6 +36,8 @@ export function PlateRow({
   const n = food ? portionsOf(item) : null;
   const sure = item.confidence >= 0.85 && !item.needsConfirm;
   const alternatives = food ? similarFoods(food, 5) : [];
+  const servings = food?.servings ?? [];
+  const canOpen = alternatives.length > 0 || servings.length > 1;
 
   const bump = (dir: 1 | -1) => {
     Haptics.selectionAsync().catch(() => {});
@@ -66,12 +68,12 @@ export function PlateRow({
   return (
     <View style={{ borderTopWidth: first ? 0 : 1, borderTopColor: colors.line }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 14, minHeight: 60 }}>
-        <Pressable onPress={() => alternatives.length && setOpen((o) => !o)} accessibilityRole={alternatives.length ? "button" : undefined} accessibilityLabel={`${item.name}, ${item.portionLabel}`} style={{ flex: 1 }}>
+        <Pressable onPress={() => canOpen && setOpen((o) => !o)} accessibilityRole={canOpen ? "button" : undefined} accessibilityHint={canOpen ? "Change serving or swap" : undefined} accessibilityLabel={`${item.name}, ${item.portionLabel}`} style={{ flex: 1 }}>
           <Body size="body" muted={false} style={{ fontWeight: "600" }} numberOfLines={1}>{item.name}</Body>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 1 }}>
             <Body size="micro" numberOfLines={1}>{item.portionLabel}</Body>
             {!sure ? <Body size="micro" style={{ color: colors.lime }}>· estimate</Body> : null}
-            {alternatives.length ? <Ionicons name={open ? "chevron-up" : "chevron-down"} size={12} color={colors.muted} /> : null}
+            {canOpen ? <Ionicons name={open ? "chevron-up" : "chevron-down"} size={12} color={colors.muted} /> : null}
           </View>
         </Pressable>
         {!hideCalories ? (
@@ -87,7 +89,33 @@ export function PlateRow({
         </Pressable>
       </View>
       {open ? (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 14, paddingBottom: 12 }}>
+        <View style={{ paddingHorizontal: 14, paddingBottom: 12, gap: 8 }}>
+          {servings.length > 1 && food ? (
+            <>
+              <Body size="micro" style={{ fontWeight: "600" }}>Serving</Body>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {servings.map((sv) => {
+                  const on = Math.abs(sv.grams - item.grams) < 1;
+                  return (
+                    <Pressable
+                      key={`${sv.label}-${sv.grams}`}
+                      onPress={() => {
+                        Haptics.selectionAsync().catch(() => {});
+                        onChange({ ...rescale(item, sv.grams), portionLabel: sv.label });
+                      }}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: on }}
+                      style={{ minHeight: 36, paddingHorizontal: 12, justifyContent: "center", borderRadius: radius.pill, borderWidth: 1, borderColor: on ? colors.accentBorder : colors.line, backgroundColor: on ? colors.limeSoft : colors.surface2 }}
+                    >
+                      <Body size="small" muted={false} style={on ? { fontWeight: "700" } : undefined}>{sv.label}{/\d\s?(g|ml)$/.test(sv.label) ? "" : ` · ${sv.grams} ${food.category === "drink" ? "ml" : "g"}`}</Body>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          ) : null}
+          {alternatives.length ? <Body size="micro" style={{ fontWeight: "600", marginTop: servings.length > 1 ? 4 : 0 }}>Swap for</Body> : null}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {alternatives.map((f) => (
             <Pressable
               key={f.id}
@@ -102,6 +130,7 @@ export function PlateRow({
               <Body size="small" muted={false}>{f.name}</Body>
             </Pressable>
           ))}
+          </View>
         </View>
       ) : null}
     </View>

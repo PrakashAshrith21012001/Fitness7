@@ -99,7 +99,7 @@ create table if not exists public.food_logs (
   id            uuid primary key,                 -- generated on the phone so an offline add can be retried safely
   member_id     uuid not null references public.members(id) on delete cascade,
   date          date not null,
-  meal          text not null check (meal in ('breakfast','lunch','snacks','dinner')),
+  meal          text not null check (meal in ('breakfast','morning_snack','lunch','snacks','dinner')),
   name          text not null,
   food_id       text,                             -- shared/foods.ts id when matched, else null
   grams         numeric(7,1) not null check (grams > 0),

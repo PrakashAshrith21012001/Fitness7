@@ -67,7 +67,13 @@ type Ctx = {
   totals: (date: string) => Totals;
   addItems: (items: DraftItem[], meal: MealSlot, date?: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  /** Edit a logged line in place (new quantity or meal); keeps its date and id order. */
+  replace: (id: string, item: DraftItem, meal?: MealSlot) => Promise<void>;
   recent: DraftItem[];
+  /** food id → times logged in the last 60 days, for ranking search results */
+  history: Record<string, number>;
+  /** food ids logged most recently, newest first */
+  recentIds: string[];
   parseText: (text: string, opts?: { allowApi?: boolean }) => Promise<ParseResponse>;
   analysePhoto: (imageBase64: string, hint?: string) => Promise<ParseResponse>;
   defaultSlot: () => MealSlot;
@@ -235,6 +241,32 @@ export function FoodProvider({ children }: { children: ReactNode }) {
     [persist, push],
   );
 
+  const replace = useCallback(
+    async (id: string, item: DraftItem, meal?: MealSlot) => {
+      const old = ref.current.find((e) => e.id === id);
+      if (!old) return;
+      const next: FoodEntry = {
+        ...old,
+        id: Crypto.randomUUID(),
+        meal: meal ?? old.meal,
+        name: item.name,
+        foodId: item.foodId,
+        grams: Math.round(item.grams),
+        portionLabel: item.portionLabel,
+        kcal: Math.round(item.kcal),
+        proteinG: Math.round(item.proteinG * 10) / 10,
+        carbsG: Math.round(item.carbsG * 10) / 10,
+        fatG: Math.round(item.fatG * 10) / 10,
+        confidence: item.confidence,
+        source: item.source,
+      };
+      await persist(ref.current.map((e) => (e.id === id ? next : e)));
+      push({ kind: "food.remove", id });
+      push({ kind: "food.add", row: toRow(next) });
+    },
+    [persist, push],
+  );
+
   const dismissSaved = useCallback(() => setLastSaved(null), []);
   const undoSaved = useCallback(async () => {
     const note = lastSaved;
@@ -284,6 +316,21 @@ export function FoodProvider({ children }: { children: ReactNode }) {
     return out;
   }, [entries]);
 
+  const { history, recentIds } = useMemo(() => {
+    const since = new Date();
+    since.setDate(since.getDate() - 60);
+    const cut = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-${String(since.getDate()).padStart(2, "0")}`;
+    const h: Record<string, number> = {};
+    const ids: string[] = [];
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const e = entries[i];
+      if (!e.foodId) continue;
+      if (e.date >= cut) h[e.foodId] = (h[e.foodId] ?? 0) + 1;
+      if (ids.length < 30 && !ids.includes(e.foodId)) ids.push(e.foodId);
+    }
+    return { history: h, recentIds: ids };
+  }, [entries]);
+
   const defaultSlot = useCallback(() => slotForHour(new Date().getHours()), []);
 
   /**
@@ -326,8 +373,8 @@ export function FoodProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<Ctx>(
-    () => ({ entries, forDate, totals, addItems, remove, recent, parseText, analysePhoto, defaultSlot, lastSaved, dismissSaved, undoSaved }),
-    [entries, forDate, totals, addItems, remove, recent, parseText, analysePhoto, defaultSlot, lastSaved, dismissSaved, undoSaved],
+    () => ({ entries, forDate, totals, addItems, remove, replace, recent, history, recentIds, parseText, analysePhoto, defaultSlot, lastSaved, dismissSaved, undoSaved }),
+    [entries, forDate, totals, addItems, remove, replace, recent, history, recentIds, parseText, analysePhoto, defaultSlot, lastSaved, dismissSaved, undoSaved],
   );
   return <FoodCtx.Provider value={value}>{children}</FoodCtx.Provider>;
 }
@@ -340,7 +387,8 @@ export function useFood() {
 
 export const MEALS: { id: MealSlot; label: string }[] = [
   { id: "breakfast", label: "Breakfast" },
+  { id: "morning_snack", label: "Morning Snack" },
   { id: "lunch", label: "Lunch" },
-  { id: "snacks", label: "Snacks" },
+  { id: "snacks", label: "Evening Snack" },
   { id: "dinner", label: "Dinner" },
 ];
