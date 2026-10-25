@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/fraunces";
 import "@fontsource-variable/plus-jakarta-sans";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme/ThemeScript";
@@ -42,7 +41,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#111412" }, { media: "(prefers-color-scheme: light)", color: "#faf9f6" }],
+  themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#090c1c" }, { media: "(prefers-color-scheme: light)", color: "#f3f5fb" }],
   width: "device-width",
   initialScale: 1,
 };

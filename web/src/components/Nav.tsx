@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, Phone } from "lucide-react";
-import { brand, navLinks, wa, telLink } from "@f7/content";
+import { Menu, X, Phone, Star } from "lucide-react";
+import { brand, navLinks, reviews, wa, telLink } from "@f7/content";
 import { cn } from "@/lib/cn";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
+/**
+ * The app's top bar, widened for the web: logo left, the tab names in the
+ * middle (the app's bottom tabs, as anchors), call + TRY FOR FREE right.
+ * Transparent over the hero photo, solid navy once you scroll.
+ */
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -30,26 +36,24 @@ export function Nav() {
     <>
       <header
         className={cn(
-          "fixed inset-x-0 top-0 z-50 transition-all duration-500",
-          scrolled ? "glass border-b border-line py-2.5" : "py-5",
+          "fixed inset-x-0 top-0 z-50 transition-all duration-300",
+          scrolled ? "glass border-b border-line py-2" : "bg-gradient-to-b from-[rgba(9,12,28,0.7)] to-transparent py-3 sm:py-4",
         )}
       >
-        <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 sm:px-8">
-          <a href="#top" className="flex items-center" aria-label={brand.fullName}>
-            <Logo
-              className={cn(
-                "transition-[height] duration-500",
-                scrolled ? "h-9 sm:h-10" : "h-11 sm:h-14",
-              )}
-            />
-          </a>
+        <nav className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link href="/#top" className="flex items-center" aria-label={`${brand.fullName} — home`}>
+            <Logo tone={scrolled ? "auto" : "dark"} className={cn("transition-[height] duration-300", scrolled ? "h-9" : "h-10 sm:h-12")} />
+          </Link>
 
-          <ul className="hidden items-center gap-9 lg:flex">
+          <ul className="hidden items-center gap-7 lg:flex">
             {navLinks.map((link) => (
               <li key={link.href}>
                 <a
-                  href={link.href}
-                  className="relative text-sm font-medium text-white/70 transition-colors hover:text-white after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-0 after:bg-green after:transition-all after:duration-300 hover:after:w-full"
+                  href={`/${link.href}`}
+                  className={cn(
+                    "text-[13px] font-bold uppercase tracking-[0.08em] transition-colors",
+                    scrolled ? "text-muted hover:text-white" : "text-[rgba(255,255,255,0.85)] hover:text-[#fff]",
+                  )}
                 >
                   {link.label}
                 </a>
@@ -57,27 +61,22 @@ export function Nav() {
             ))}
           </ul>
 
-          <div className="flex items-center gap-3">
-            <ThemeToggle className="hidden sm:grid" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle className={cn("hidden sm:grid", !scrolled && "!border-[rgba(255,255,255,0.25)] !text-[#fff]")} />
             <a
               href={telLink()}
-              className="hidden size-11 place-items-center rounded-full border border-line text-white/70 transition-colors hover:border-lime hover:text-lime sm:grid"
+              className={cn("hidden size-11 place-items-center rounded-full border transition-colors sm:grid", scrolled ? "border-line text-white/80 hover:text-white" : "border-[rgba(255,255,255,0.25)] text-[#fff]")}
               aria-label="Call the gym"
             >
               <Phone className="size-4" strokeWidth={1.8} />
             </a>
-            <a
-              href={wa.trial()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-green hidden px-5 py-2.5 text-sm sm:inline-flex"
-            >
-              Free trial
+            <a href={wa.trial()} target="_blank" rel="noopener noreferrer" className="btn-pink hidden h-11 items-center px-5 sm:inline-flex">
+              Try for free
             </a>
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="grid size-11 place-items-center rounded-full border border-line text-white lg:hidden"
+              className={cn("grid size-11 place-items-center rounded-full border lg:hidden", scrolled ? "border-line text-white" : "border-[rgba(255,255,255,0.25)] text-[#fff]")}
               aria-label="Open menu"
             >
               <Menu className="size-5" strokeWidth={1.8} />
@@ -89,15 +88,15 @@ export function Nav() {
       <AnimatePresence>
         {open ? (
           <motion.div
-            className="fixed inset-0 z-[60] bg-ink lg:hidden"
+            className="fixed inset-0 z-[60] bg-deep lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
           >
-            <div className="flex h-full flex-col px-5 py-5 sm:px-8">
+            <div className="flex h-full flex-col px-4 py-3 sm:px-6">
               <div className="flex items-center justify-between">
-                <Logo className="h-9" />
+                <Logo className="h-10" />
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
@@ -108,39 +107,33 @@ export function Nav() {
                 </button>
               </div>
 
-              <ul className="mt-16 flex flex-col gap-2">
+              <ul className="mt-10 flex flex-col">
                 {navLinks.map((link, i) => (
                   <motion.li
                     key={link.href}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.06 * i + 0.1, duration: 0.4 }}
+                    transition={{ delay: 0.04 * i + 0.05, duration: 0.3 }}
+                    className="border-b border-line"
                   >
-                    <a
-                      href={link.href}
-                      onClick={() => setOpen(false)}
-                      className="display block py-3 text-5xl text-white transition-colors hover:text-lime"
-                    >
+                    <a href={`/${link.href}`} onClick={() => setOpen(false)} className="block py-4 text-2xl font-extrabold text-white">
                       {link.label}
                     </a>
                   </motion.li>
                 ))}
               </ul>
 
-              <div className="mt-auto flex flex-col gap-3">
+              <p className="mt-6 flex items-center gap-2 text-sm text-muted">
+                <Star className="size-4 fill-gold text-gold" strokeWidth={0} />
+                <span className="font-bold text-white">{reviews.rating.toFixed(1)}</span> on Google · {reviews.count} reviews
+              </p>
+
+              <div className="mt-auto flex flex-col gap-3 pb-4">
                 <div className="flex justify-end"><ThemeToggle /></div>
-                <a
-                  href={wa.trial()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-green px-6 py-4 text-center"
-                >
-                  Book a free trial
+                <a href={wa.trial()} target="_blank" rel="noopener noreferrer" className="btn-pink flex h-12 items-center justify-center">
+                  Try for free
                 </a>
-                <a
-                  href={telLink()}
-                  className="rounded-full border border-line px-6 py-4 text-center font-semibold text-white"
-                >
+                <a href={telLink()} className="flex h-12 items-center justify-center rounded-lg bg-surface-2 text-[13px] font-extrabold uppercase tracking-[0.06em] text-white">
                   Call the gym
                 </a>
               </div>

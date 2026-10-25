@@ -1,62 +1,53 @@
-import { Phone, MapPin } from "lucide-react";
+import { Phone, MapPin, MessageCircle } from "lucide-react";
 import { InstagramGlyph } from "@/components/ui/InstagramGlyph";
-import { brand, contact, navLinks, addressLine, wa } from "@f7/content";
+import { brand, contact, navLinks, addressLine, wa, telLink } from "@f7/content";
 import { Logo } from "@/components/Logo";
 
+/** The app's Quick Links block, laid out as the site footer. */
 export function Footer() {
+  const quick = [
+    { label: "Book a free trial", href: wa.trial(), external: true },
+    { label: "Personal training", href: wa.personalTraining(), external: true },
+    { label: "Reserve a trek slot", href: "/#treks" },
+    { label: "Order from the store", href: "/#shop" },
+    { label: "Get directions", href: contact.mapsUrl, external: true },
+  ];
   return (
-    <footer className="border-t border-line bg-surface/40">
-      <div className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8">
-        <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr]">
+    <footer className="mt-16 border-t border-line bg-deep pb-24 sm:pb-0">
+      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
           <div>
-            <Logo className="h-16" />
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-              Gym Unisex · {brand.city}
+            <Logo className="h-14" />
+            <p className="label mt-2">Gym Unisex · {brand.city}</p>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
+              {brand.tagline}. Strength, conditioning and one hill trek a month, on the Nethaji Bypass in Dharmapuri.
             </p>
-            <p className="mt-6 max-w-sm text-sm leading-relaxed text-muted">
-              {brand.tagline} Strength, conditioning and one hill trek a month,
-              on the main road in Dharmapuri.
-            </p>
-            <div className="mt-7 flex gap-3">
-              <a
-                href={contact.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="grid size-11 place-items-center rounded-full border border-line text-white/70 transition-colors hover:border-lime hover:text-lime"
-              >
-                <InstagramGlyph className="size-4" strokeWidth={1.8} />
-              </a>
-              <a
-                href={`tel:${contact.phone}`}
-                aria-label="Call"
-                className="grid size-11 place-items-center rounded-full border border-line text-white/70 transition-colors hover:border-lime hover:text-lime"
-              >
-                <Phone className="size-4" strokeWidth={1.8} />
-              </a>
-              <a
-                href={contact.mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Directions"
-                className="grid size-11 place-items-center rounded-full border border-line text-white/70 transition-colors hover:border-lime hover:text-lime"
-              >
-                <MapPin className="size-4" strokeWidth={1.8} />
-              </a>
+            <div className="mt-5 flex gap-2.5">
+              {[
+                { href: contact.instagram, label: "Instagram", icon: <InstagramGlyph className="size-4" strokeWidth={1.8} />, ext: true },
+                { href: wa.general(), label: "WhatsApp", icon: <MessageCircle className="size-4" strokeWidth={1.8} />, ext: true },
+                { href: telLink(), label: "Call", icon: <Phone className="size-4" strokeWidth={1.8} />, ext: false },
+                { href: contact.mapsUrl, label: "Directions", icon: <MapPin className="size-4" strokeWidth={1.8} />, ext: true },
+              ].map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  {...(s.ext ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  aria-label={s.label}
+                  className="grid size-11 place-items-center rounded-full border border-line text-white/80 transition-colors hover:bg-surface hover:text-white"
+                >
+                  {s.icon}
+                </a>
+              ))}
             </div>
           </div>
 
-          <nav aria-label="Footer">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">
-              Explore
-            </h2>
-            <ul className="mt-5 space-y-3">
+          <nav aria-label="Sections">
+            <h2 className="label">Explore</h2>
+            <ul className="mt-4 space-y-2.5">
               {navLinks.map((link) => (
                 <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-muted transition-colors hover:text-lime"
-                  >
+                  <a href={`/${link.href}`} className="text-sm text-white/85 hover:text-white">
                     {link.label}
                   </a>
                 </li>
@@ -64,41 +55,40 @@ export function Footer() {
             </ul>
           </nav>
 
+          <nav aria-label="Quick links">
+            <h2 className="label">Quick links</h2>
+            <ul className="mt-4 space-y-2.5">
+              {quick.map((q) => (
+                <li key={q.label}>
+                  <a href={q.href} {...(q.external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-sm text-white/85 hover:text-white">
+                    {q.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
           <div>
-            <h2 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">
-              Visit
-            </h2>
-            <address className="mt-5 not-italic text-sm leading-relaxed text-muted">
-              {addressLine}
-            </address>
-            <a
-              href={`tel:${contact.phone}`}
-              className="mt-4 block text-sm text-muted transition-colors hover:text-lime"
-            >
-              {contact.phone}
+            <h2 className="label">Visit</h2>
+            <address className="mt-4 text-sm not-italic leading-relaxed text-muted">{addressLine}</address>
+            <a href={telLink()} className="mt-3 block text-sm text-white/85 hover:text-white">
+              {contact.phoneDisplay}
             </a>
-            <a
-              href={`mailto:${contact.email}`}
-              className="mt-1 block text-sm text-muted transition-colors hover:text-lime"
-            >
+            <a href={`mailto:${contact.email}`} className="mt-1 block text-sm text-white/85 hover:text-white">
               {contact.email}
-            </a>
-            <a
-              href={wa.general()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 inline-flex rounded-full bg-green px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-white"
-            >
-              WhatsApp us
             </a>
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-line pt-7 text-xs text-white/35 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {brand.fullName}. All rights reserved.
           </p>
-          <p>Dharmapuri, Tamil Nadu</p>
+          <p className="flex flex-wrap gap-x-5 gap-y-2">
+            <a href="/privacy" className="hover:text-white">Privacy policy</a>
+            <a href="/delete-account" className="hover:text-white">Delete account</a>
+            <span>Dharmapuri, Tamil Nadu</span>
+          </p>
         </div>
       </div>
     </footer>

@@ -613,8 +613,9 @@ export const faqs: Faq[] = [
 
 export const navLinks = [
   { href: "#classes", label: "Classes" },
-  { href: "#trek", label: "Trekking" },
-  { href: "#trainers", label: "Trainers" },
-  { href: "#pricing", label: "Membership" },
-  { href: "#contact", label: "Visit" },
+  { href: "#treks", label: "Treks" },
+  { href: "#transform", label: "Transform" },
+  { href: "#plans", label: "Plans" },
+  { href: "#eat-well", label: "Eat well" },
+  { href: "#visit", label: "Visit" },
 ] as const;

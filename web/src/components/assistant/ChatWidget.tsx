@@ -106,7 +106,7 @@ export function ChatWidget() {
         role="dialog"
         aria-label={`${brand.name} assistant`}
         aria-hidden={!open}
-        className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] flex-col overflow-hidden rounded-t-3xl border border-line bg-surface shadow-2xl transition-all duration-300 sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[600px] sm:max-h-[calc(100svh-8rem)] sm:w-[400px] sm:rounded-3xl ${
+        className={`fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] flex-col overflow-hidden rounded-t-3xl border border-line bg-solid shadow-2xl transition-all duration-300 sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[600px] sm:max-h-[calc(100svh-8rem)] sm:w-[400px] sm:rounded-3xl ${
           open ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
         }`}
       >
@@ -120,7 +120,7 @@ export function ChatWidget() {
             href={wa.general()}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden items-center gap-1 rounded-full border border-line px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:border-lime hover:text-lime sm:inline-flex"
+            className="hidden items-center gap-1 rounded-full border border-line px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:border-white sm:inline-flex"
           >
             WhatsApp <ArrowUpRight className="size-3" strokeWidth={2.4} />
           </a>
@@ -140,7 +140,7 @@ export function ChatWidget() {
               <p
                 className={`max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   m.role === "user"
-                    ? "rounded-br-md bg-green text-on-accent"
+                    ? "rounded-br-md bg-pink text-[#fff]"
                     : "rounded-bl-md border border-line bg-ink text-white"
                 }`}
               >
@@ -167,7 +167,7 @@ export function ChatWidget() {
                 type="button"
                 onClick={() => send(c)}
                 disabled={busy}
-                className="min-h-9 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-lime hover:text-lime disabled:opacity-50"
+                className="min-h-9 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:border-white disabled:opacity-50"
               >
                 {c}
               </button>
@@ -191,13 +191,13 @@ export function ChatWidget() {
             placeholder="Ask anything about the gym…"
             autoComplete="off"
             maxLength={500}
-            className="min-h-11 flex-1 rounded-full border border-line bg-ink px-4 text-sm text-white placeholder:text-muted focus:border-lime focus:outline-none"
+            className="min-h-11 flex-1 rounded-full border border-line bg-ink px-4 text-sm text-white placeholder:text-muted focus:border-white focus:outline-none"
           />
           <button
             type="submit"
             disabled={busy || !input.trim()}
             aria-label="Send"
-            className="btn-green grid size-11 place-items-center disabled:opacity-50"
+            className="grid size-11 place-items-center rounded-full bg-pink text-[#fff] disabled:opacity-50"
           >
             <Send className="size-4" strokeWidth={2.4} />
           </button>
@@ -211,7 +211,7 @@ export function ChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Close chat" : `Chat with ${brand.name}`}
-        className="btn-green fixed bottom-5 right-5 z-50 grid size-14 place-items-center rounded-full ring-[3px] ring-white/40 sm:bottom-6 sm:right-6"
+        className="fixed bottom-[84px] right-4 z-50 grid size-14 place-items-center rounded-full bg-pink text-[#fff] shadow-lg ring-[3px] ring-[rgba(255,255,255,0.3)] sm:bottom-6 sm:right-6"
       >
         {open ? <X className="size-6" strokeWidth={2.2} /> : <Sparkles className="size-6" strokeWidth={2} />}
         {unread && !open ? (

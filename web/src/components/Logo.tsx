@@ -5,7 +5,15 @@ import { brand } from "@f7/content";
  * dark, ink lettering for light. The green is the logo's own (#8cba3d) and is
  * left untouched — a logo is not re-coloured to match a UI accent.
  */
-export function Logo({ className = "h-9" }: { className?: string }) {
+export function Logo({ className = "h-9", tone = "auto" }: { className?: string; tone?: "auto" | "dark" }) {
+  if (tone === "dark") {
+    return (
+      <span className="inline-flex items-center" aria-label={brand.fullName}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/logo-dark.png" srcSet="/brand/logo-dark.png 1x, /brand/logo-dark@2x.png 2x" alt="" width={408} height={194} className={`${className} w-auto`} decoding="async" />
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center" aria-label={brand.fullName}>
       {/* eslint-disable-next-line @next/next/no-img-element */}

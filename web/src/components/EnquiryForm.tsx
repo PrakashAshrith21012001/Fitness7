@@ -7,7 +7,7 @@ import { classes, wa } from "@f7/content";
 type State = "idle" | "sending" | "sent" | "error";
 
 const field =
-  "w-full rounded-xl border border-line bg-ink px-4 py-3.5 text-sm text-white placeholder:text-white/30 transition-colors focus:border-lime focus:outline-none";
+  "w-full rounded-[10px] border border-line bg-surface px-4 py-3.5 text-sm text-white placeholder:text-muted transition-colors focus:border-white focus:outline-none [&>option]:bg-solid";
 
 export function EnquiryForm() {
   const [state, setState] = useState<State>("idle");
@@ -39,8 +39,8 @@ export function EnquiryForm() {
 
   if (state === "sent") {
     return (
-      <div className="mt-7 flex flex-col items-center rounded-2xl border border-lime/30 bg-green/5 px-6 py-12 text-center">
-        <span className="flex size-14 items-center justify-center rounded-full btn-green">
+      <div className="mt-6 flex flex-col items-center rounded-[14px] border border-line bg-surface px-6 py-10 text-center">
+        <span className="flex size-14 items-center justify-center rounded-full bg-green text-on-accent">
           <Check className="size-7" strokeWidth={3} />
         </span>
         <h4 className="mt-5 text-lg font-semibold text-white">Got it.</h4>
@@ -52,7 +52,7 @@ export function EnquiryForm() {
           href={wa.general()}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-green px-6 py-3 text-sm font-semibold text-ink transition-colors hover:bg-white"
+          className="btn-pink mt-6 inline-flex h-11 items-center gap-2 px-5"
         >
           Open WhatsApp
           <ArrowUpRight className="size-4" strokeWidth={2.4} />
@@ -62,7 +62,7 @@ export function EnquiryForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-7 space-y-4">
+    <form onSubmit={onSubmit} className="mt-6 space-y-3">
       {/* honeypot — bots fill this, humans never see it */}
       <input
         type="text"
@@ -124,7 +124,7 @@ export function EnquiryForm() {
       <button
         type="submit"
         disabled={state === "sending"}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-green px-6 py-4 font-semibold text-ink transition-all hover:bg-white disabled:opacity-60"
+        className="btn-pink inline-flex h-12 w-full items-center justify-center gap-2 disabled:opacity-60"
       >
         {state === "sending" ? (
           <>
@@ -136,7 +136,7 @@ export function EnquiryForm() {
         )}
       </button>
 
-      <p className="text-center text-[11px] leading-relaxed text-white/35">
+      <p className="text-center text-[11px] leading-relaxed text-muted">
         We only use your number to reply. No marketing lists.
       </p>
     </form>

@@ -25,7 +25,7 @@ export function BackToTop() {
       onClick={toTop}
       aria-label="Back to top"
       tabIndex={show ? 0 : -1}
-      className={`fixed bottom-[5.5rem] right-5 z-40 grid size-12 place-items-center rounded-full border border-line bg-surface text-white shadow-lg ring-[3px] ring-white/25 transition-all duration-300 hover:border-lime hover:text-lime sm:bottom-24 sm:right-6 ${
+      className={`fixed bottom-24 right-6 z-40 hidden size-12 place-items-center rounded-full border border-line bg-solid text-white shadow-lg transition-all duration-300 hover:border-white sm:grid ${
         show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
       }`}
     >
