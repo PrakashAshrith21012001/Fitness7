@@ -22,7 +22,16 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -36,6 +45,14 @@
           "backgroundColor": "#05060A",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 120
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Fitness 7 uses your photos so you can log a meal from a picture.",
+          "cameraPermission": "Fitness 7 uses the camera so you can snap your plate and log a meal.",
+          "microphonePermission": false
         }
       ]
     ],

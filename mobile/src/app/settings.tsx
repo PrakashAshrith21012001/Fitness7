@@ -222,14 +222,27 @@ export default function Settings() {
           value={isConfigured ? "Kept in your Fitness 7 account and on this phone. Nothing is shared or sold." : "Stored on this phone only. Nothing is shared or sold."}
         />
         <Row
+          icon="document-text-outline"
+          label="Privacy policy"
+          onPress={() => Linking.openURL("https://fitness7gym.in/privacy").catch(() => {})}
+        />
+        <Row
           icon="trash-outline"
           label="Delete my data"
           value={isConfigured ? "Removes your account and everything in it" : "Removes your profile from this phone"}
           onPress={() => {
             const go = async () => {
               if (isConfigured && !member.id.startsWith("local-")) {
-                // Best effort: if the site is unreachable the sign-out still happens; support can finish the delete.
-                await api("/api/member/me", { method: "DELETE" }).catch(() => {});
+                try {
+                  await api("/api/member/me", { method: "DELETE" });
+                } catch {
+                  // Keep them signed in so they can retry; never pretend the account is gone.
+                  Alert.alert("Couldn't delete yet", "Check your connection and try again, or message us on WhatsApp and we'll delete it for you.", [
+                    { text: "OK", style: "cancel" },
+                    { text: "WhatsApp", onPress: () => void Linking.openURL(wa.general()).catch(() => {}) },
+                  ]);
+                  return;
+                }
               }
               await signOut();
               router.replace("/");
@@ -255,7 +268,7 @@ export default function Settings() {
       </Group>
 
       <Body size="micro" style={{ textAlign: "center", marginTop: 24 }}>
-        FItness 7 gym unisex · App 1.0
+        Fitness 7 Gym Unisex · App 1.0
       </Body>
     </Screen>
   );

@@ -6,7 +6,6 @@ import { ArrowUpRight, Dumbbell, Flame, HeartPulse, Sparkles, Swords, Target, Wi
 import { classes, wa } from "@f7/content";
 import { gsap, prefersReducedMotion, useGSAP } from "@/lib/gsap";
 import { athlete, EXERCISE_FOR } from "@/lib/athlete";
-import { useTheme } from "@/components/theme/useTheme";
 
 const Athlete3D = dynamic(() => import("@/components/home/Athlete3D"), { ssr: false, loading: () => <div className="size-full" /> });
 const noop = () => () => {};
@@ -27,7 +26,7 @@ export function Programs() {
   const stage = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [inView, setInView] = useState(false);
-  const [theme] = useTheme();
+  const angle = useRef<HTMLSpanElement>(null);
   const still = useSyncExternalStore(noop, prefersReducedMotion, () => false);
 
   const show = (i: number) => {
@@ -55,6 +54,22 @@ export function Programs() {
       row?.removeEventListener("scroll", onRow);
     };
   }, []);
+
+  // live joint angle from the 3D scene, written straight to the DOM
+  useEffect(() => {
+    if (!inView) return;
+    let raf = 0;
+    let last = -1;
+    const tick = () => {
+      if (angle.current && athlete.angle !== last) {
+        last = athlete.angle;
+        angle.current.textContent = `${last}°`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView]);
 
   useGSAP(
     () => {
@@ -109,19 +124,37 @@ export function Programs() {
               Every session is coached. Scale it to where you are today — nobody sits out.
             </p>
 
-            {/* the 3D athlete, demonstrating the card in view */}
-            <div className="relative mt-6 rounded-[24px] bg-surface ring-1 ring-line">
-              <div ref={stage} className="h-[300px] sm:h-[340px] lg:h-[min(38vh,360px)]" aria-hidden>
-                <Athlete3D active={inView} dark={theme === "dark"} still={still} />
-              </div>
-              <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3" aria-live="polite">
-                <span className="min-w-0">
-                  <span className="cond tnum mr-2 text-lg text-muted">{String(active + 1).padStart(2, "0")}</span>
-                  <span className="text-sm font-bold text-fg">{EXERCISE_FOR[classes[active].id]?.label}</span>
-                </span>
-                <span className="truncate text-xs text-muted">{classes[active].name}</span>
-              </div>
-            </div>
+            {/* the 3D athlete: an anatomy chart that moves — working muscles glow, form line shows the joint angle */}
+            {(() => {
+              const mv = EXERCISE_FOR[classes[active].id];
+              return (
+                <div className="relative mt-6 overflow-hidden rounded-[24px] bg-[radial-gradient(120%_90%_at_50%_30%,#3a3c43_0%,#24252a_55%,#18191c_100%)] text-[#f2f0ea] ring-1 ring-black/20 shadow-[0_30px_60px_-30px_rgba(0,0,0,0.6)]">
+                  <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-wrap gap-1.5" aria-hidden>
+                    {mv?.works.split(" · ").map((w) => (
+                      <span key={w} className="rounded-full bg-[#e2452b]/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[#ff8a72] ring-1 ring-[#e2452b]/40">
+                        {w}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="pointer-events-none absolute right-4 top-4 z-10 text-right" aria-hidden>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#f2f0ea]/55">{mv?.formLabel} angle</p>
+                    <p className="cond tnum text-3xl leading-none text-[#8dff4f] [text-shadow:0_0_14px_rgba(141,255,79,0.55)]">
+                      <span ref={angle}>180°</span>
+                    </p>
+                  </div>
+                  <div ref={stage} className="h-[320px] sm:h-[360px] lg:h-[min(40vh,380px)]" aria-hidden>
+                    <Athlete3D active={inView} still={still} />
+                  </div>
+                  <div className="flex items-center justify-between gap-3 border-t border-[#f2f0ea]/10 px-4 py-3" aria-live="polite">
+                    <span className="min-w-0">
+                      <span className="cond tnum mr-2 text-lg text-[#f2f0ea]/45">{String(active + 1).padStart(2, "0")}</span>
+                      <span className="text-sm font-bold">{mv?.label}</span>
+                    </span>
+                    <span className="truncate text-xs text-[#f2f0ea]/60">{classes[active].name}</span>
+                  </div>
+                </div>
+              );
+            })()}
           </header>
 
           <div className="relative mt-8 lg:mt-0 lg:min-w-0 lg:flex-1 lg:[clip-path:inset(-40%_-100vw_-40%_0)]" style={{ perspective: "1400px" }}>

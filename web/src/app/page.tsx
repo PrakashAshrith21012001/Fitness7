@@ -14,9 +14,11 @@ import { Treks } from "@/components/home/Treks";
 import { Numbers } from "@/components/home/Numbers";
 import { Coaching } from "@/components/home/Coaching";
 import { Plans } from "@/components/home/Plans";
+import { FoodTracker } from "@/components/home/FoodTracker";
 import { Voices, Questions } from "@/components/home/Voices";
 import { VisitUs } from "@/components/home/VisitUs";
 import { Closing } from "@/components/home/Closing";
+import { FOODS } from "@f7/content";
 import { getPublishedTreks, getActiveAnnouncements } from "@/server/treks";
 
 export const revalidate = 60;
@@ -51,6 +53,7 @@ export default async function Home() {
           <Treks treks={upcoming.length ? upcoming : treks} />
           <Numbers />
           <Coaching />
+          <FoodTracker foodCount={FOODS.length} />
           <Plans />
           <Voices />
           <Questions />
