@@ -1,79 +1,68 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/* Colour — the app's palette (mobile/src/theme/ThemeProvider.tsx), so  */
-/* the website and the app read as one product. Dark is the default:   */
-/* deep navy canvas, translucent white panes, one pink action, green   */
-/* for done/saving, gold for deals. Light is the same idea lifted.     */
-/* Change a colour here and in ThemeProvider together.                 */
+/* Fitness 7 — light only (v20).                                       */
+/* Warm paper canvas, ink type, ink buttons. The logo's green is the   */
+/* one accent, used for small signals (status, ticks, highlights).     */
+/* Token names are kept from earlier versions so admin pages and the   */
+/* privacy pages pick the new look up without edits.                   */
 /* ------------------------------------------------------------------ */
-:root, :root[data-theme="dark"], [data-tone="dark"] {
-  --p-bg: #0f1428; --p-deep: #090c1c;
-  --p-surface: rgba(255,255,255,0.07); --p-surface-2: rgba(255,255,255,0.12); --p-solid: #161b33;
-  --p-line: rgba(255,255,255,0.12);
-  --p-fg: #ffffff; --p-muted: #9aa1b8;
-  --p-accent: #3ddc84; --p-green: #3ddc84; --p-accent-deep: #2bbf6d; --p-on-accent: #0f1428;
-  --p-pink: #ff3e6c; --p-gold: #ffc857; --p-blue: #7aa2ff;
-  --ridge-near: #090c1c; --ridge-far: #161b33;
-  color-scheme: dark;
-}
-:root[data-theme="light"] {
-  --p-bg: #f3f5fb; --p-deep: #e6e9f4;
-  --p-surface: #ffffff; --p-surface-2: #e9ecf5; --p-solid: #ffffff;
-  --p-line: #dfe3ee;
-  --p-fg: #0f1428; --p-muted: #5f667f;
-  --p-accent: #149a52; --p-green: #149a52; --p-accent-deep: #0f7d42; --p-on-accent: #ffffff;
-  --p-pink: #f0295b; --p-gold: #c98a00; --p-blue: #3e64d6;
-  --ridge-near: #dfe3ee; --ridge-far: #e9ecf5;
+:root {
+  --p-bg: #f4f2ed;          /* paper */
+  --p-deep: #ebe8e1;        /* a band one step deeper */
+  --p-surface: #ffffff;     /* cards */
+  --p-surface-2: #efece6;   /* chips, inputs, quiet fills */
+  --p-solid: #ffffff;       /* opaque panels (sheets, chat) */
+  --p-line: #dedad2;        /* hairlines */
+  --p-fg: #121316;          /* ink */
+  --p-muted: #5c5f67;       /* secondary text (≥ 4.5:1 on paper) */
+  --p-accent: #4b7c15;      /* brand green, text-safe */
+  --p-brand: #8cba3d;       /* the logo's green — fills only, never text */
+  --p-green: #4b7c15;
+  --p-accent-deep: #3b6311;
+  --p-on-accent: #ffffff;
+  --p-pink: #121316;        /* legacy name: "the primary action colour" — now ink */
+  --p-gold: #a86a12;
+  --p-blue: #2f5bd3;
+  --page-bg: #f4f2ed;
   color-scheme: light;
 }
-:root, :root[data-theme="dark"] { --wash-hero: linear-gradient(180deg, #090c1c 0%, #0f1428 60%); }
-:root[data-theme="light"] { --wash-hero: linear-gradient(180deg, #e6e9f4 0%, #f3f5fb 60%); }
 
-/* Semantic tokens. `ink` is the canvas, `white` the foreground and
-   `lime` the accent — the names stay stable while the palette changes,
-   so components never hard-code a colour. */
 @theme inline {
   --color-ink: var(--p-bg);
+  --color-paper: var(--p-bg);
+  --color-deep: var(--p-deep);
   --color-surface: var(--p-surface);
   --color-surface-2: var(--p-surface-2);
+  --color-solid: var(--p-solid);
   --color-line: var(--p-line);
   --color-muted: var(--p-muted);
   --color-white: var(--p-fg);
+  --color-fg: var(--p-fg);
   --color-lime: var(--p-accent);
+  --color-brand: var(--p-brand);
   --color-green: var(--p-green);
   --color-lime-deep: var(--p-accent-deep);
   --color-on-accent: var(--p-on-accent);
-  --color-rim: var(--p-line);
-  --color-deep: var(--p-deep);
-  --color-solid: var(--p-solid);
   --color-pink: var(--p-pink);
   --color-gold: var(--p-gold);
   --color-blue: var(--p-blue);
+  --color-rim: var(--p-line);
 }
 
 @theme {
-  /* The app speaks in heavy sans (800–900), so the site does too. */
   --font-display: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-cond: "Barlow Condensed", "Arial Narrow", sans-serif;
 
-  /* App radii: 8 for buttons, 14 for cards */
   --radius-xl: 12px;
-  --radius-2xl: 14px;
-  --radius-3xl: 20px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
 
-  --animate-marquee: marquee 40s linear infinite;
-  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-shimmer: shimmer 2.6s linear infinite;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
-  @keyframes marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-  @keyframes pulse-ring {
-    0%, 100% { opacity: 0.35; transform: scale(1); }
-    50% { opacity: 0.08; transform: scale(1.35); }
-  }
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
   @keyframes shimmer {
     from { background-position: 200% 0; }
     to { background-position: -200% 0; }
@@ -82,271 +71,118 @@
 
 @layer base {
   html {
-    scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
+    scroll-padding-top: 88px;
+    background: var(--p-bg);
   }
-
   body {
-    background: var(--color-ink);
-    color: var(--color-white);
-    transition: background-color 0.5s ease, color 0.5s ease;
+    background: var(--p-bg);
+    color: var(--p-fg);
     font-family: var(--font-sans);
-    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
+  ::selection { background: var(--p-brand); color: var(--p-fg); }
 
-  ::selection {
-    background: var(--color-pink);
-    color: #ffffff;
-  }
+  h1, h2, h3 { text-wrap: balance; }
+  p, li, dd { text-wrap: pretty; }
 
-  /* Lime scrollbar, desktop only */
-  @media (pointer: fine) {
-    ::-webkit-scrollbar { width: 10px; }
-    ::-webkit-scrollbar-track { background: var(--color-ink); }
-    ::-webkit-scrollbar-thumb {
-      background: var(--color-line);
-      border-radius: 999px;
-      border: 2px solid var(--color-ink);
-    }
-    ::-webkit-scrollbar-thumb:hover { background: var(--color-lime-deep); }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--p-fg);
+    outline-offset: 3px;
+    border-radius: 10px;
   }
+  a, button, summary, label[for], select { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
 
   @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
 }
 
 @layer utilities {
-  /* Black-background product loops disappear into a dark canvas with screen
-     blending; on light they are ghosted rather than shown as a black slab. */
-  .chapter-media { mix-blend-mode: screen; opacity: 0.9; }
-  /* On cream the clip can't blend away — it is shown straight, as a soft dark
-     plate whose radial mask dissolves into the page, the way a product shot
-     sits on its own ground. */
-  :root[data-theme="light"] .chapter-media {
-    mix-blend-mode: normal;
-    opacity: 0.95;
-    filter: contrast(1.04) saturate(1.05);
+  /* Headline voice */
+  .display { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.035em; line-height: 0.98; }
+  .h-hero { font-size: clamp(44px, 7.4vw, 112px); line-height: 0.94; letter-spacing: -0.045em; font-weight: 800; }
+  .h-section { font-size: clamp(34px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.035em; font-weight: 800; }
+  .cond { font-family: var(--font-cond); font-weight: 700; letter-spacing: -0.01em; text-transform: uppercase; }
+
+  .eyebrow, .label {
+    font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--p-muted);
   }
 
-  /* Band colour laid over the ascent footage so the climb's colour flips stay
-     legible on top of real sky. Heavier in light, where the footage is dark. */
-  .story-wash {
-    background: color-mix(in srgb, var(--p-bg) 48%, transparent);
+  /* Buttons: ink pill for the one primary action, outlined pill for everything else */
+  .btn-primary, .btn-pink, .btn-green {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    background: var(--p-fg); color: #fff; font-weight: 700; font-size: 15px;
+    border-radius: 999px; transition: transform 200ms var(--ease-out-expo), background-color 200ms ease, box-shadow 200ms ease;
+    box-shadow: 0 10px 30px -12px rgb(18 19 22 / 0.45);
   }
-  :root[data-theme="light"] .story-wash {
-    background: color-mix(in srgb, var(--p-bg) 70%, transparent);
+  .btn-primary:hover, .btn-pink:hover, .btn-green:hover { background: #26282d; }
+  .btn-primary:active, .btn-pink:active, .btn-green:active { transform: scale(0.97); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    background: transparent; color: var(--p-fg); font-weight: 700; font-size: 15px;
+    border: 1.5px solid var(--p-fg); border-radius: 999px;
+    transition: background-color 200ms ease, color 200ms ease, transform 200ms var(--ease-out-expo);
   }
+  .btn-secondary:hover { background: var(--p-fg); color: #fff; }
+  .btn-secondary:active { transform: scale(0.97); }
+  .btn-ghost { border: 1px solid var(--p-line); border-radius: 999px; font-weight: 700; transition: background-color 200ms ease; }
+  .btn-ghost:hover { background: var(--p-surface-2); }
 
-  /* Light theme reads the floor as a ghosted plate behind FirstGrade's cream
-     wash, rather than a dark photo fighting a light scrim into mud. */
-  :root[data-theme="light"] .hero-media {
-    opacity: 0.38;
-    filter: saturate(0.85) contrast(1.05);
-  }
+  .pane { background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 20px; }
+  .glass { background: color-mix(in srgb, var(--p-bg) 82%, transparent); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); }
+  .scrim { background: linear-gradient(180deg, rgb(18 19 22 / 0) 35%, rgb(18 19 22 / 0.75) 100%); }
 
-  .story-fade,
-  .story-fade * {
-    transition-property: background-color, color, border-color, fill, stroke;
-    transition-duration: 600ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Headline voice: the app's 800 sans, tight */
-  .display {
-    font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.05;
-    text-transform: none;
-  }
-
-  /* The app's one loud action: pink, 8px radius, 800 uppercase. `.btn-green`
-     is kept as an alias so older pages (admin, privacy) pick up the new look. */
-  .btn-pink, .btn-green {
-    background: var(--color-pink);
-    color: #ffffff;
-    font-weight: 800;
-    border-radius: 8px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 0.8125rem;
-    transition: transform 0.2s ease, filter 0.2s ease;
-  }
-  .btn-pink:hover, .btn-green:hover { filter: brightness(1.08); }
-  .btn-pink:active, .btn-green:active { transform: scale(0.97); }
-  /* Translucent pill on photos — "Shop now", "Reserve a slot" */
-  .btn-glass {
-    background: rgba(255,255,255,0.18);
-    color: #fff;
-    font-weight: 800;
-    border-radius: 8px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    transition: background 0.2s ease, transform 0.2s ease;
-  }
-  .btn-glass:hover { background: rgba(255,255,255,0.28); }
-  .btn-glass:active { transform: scale(0.97); }
-  /* Outlined small button on photos — "Explore", "Know more" */
-  .btn-ghost {
-    border: 1px solid rgba(255,255,255,0.7);
-    color: #fff;
-    font-weight: 800;
-    border-radius: 8px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    transition: background 0.2s ease;
-  }
-  .btn-ghost:hover { background: rgba(255,255,255,0.12); }
-  /* Card on the canvas: translucent white on navy, hairline border */
-  .pane {
-    background: var(--color-surface);
-    border: 1px solid var(--color-line);
-    border-radius: 14px;
-  }
-  /* Small uppercase caption — "WHAT YOU GET" */
-  .label {
-    font-size: 11px;
-    line-height: 14px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--color-muted);
-  }
-  /* Bottom scrim on photo cards, same stops as the app's <Scrim> */
-  .scrim {
-    background: linear-gradient(180deg, rgba(9,12,28,0) 30%, rgba(9,12,28,0.55) 60%, rgba(9,12,28,0.92) 100%);
-  }
-  .snap-row {
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: 1rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
+  .snap-row { scroll-snap-type: x mandatory; scrollbar-width: none; scroll-padding-inline: 1rem; }
   .snap-row::-webkit-scrollbar { display: none; }
   .snap-row > * { scroll-snap-align: start; }
-
-  /* Outlined display words — the "AROMA / UMAMI" treatment from the reference */
-  .display-outline {
-    -webkit-text-stroke: 2px color-mix(in srgb, var(--color-white) 80%, transparent);
-    color: transparent;
-    paint-order: stroke fill;
-  }
-  @media (min-width: 1024px) {
-    .display-outline { -webkit-text-stroke-width: 2px; }
-  }
-
-  .eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-muted);
-  }
-
-  /* The frosted panel. One per page. */
-  .glass-panel {
-    background: color-mix(in srgb, var(--color-surface) 55%, transparent);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid color-mix(in srgb, var(--color-white) 12%, transparent);
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, var(--color-white) 15%, transparent),
-      0 24px 70px -30px rgb(0 0 0 / 0.9);
-  }
-  /* Safari <18 and Firefox with backdrop-filter off get an opaque panel
-     rather than unreadable text over moving footage. */
-  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .glass-panel {
-      background: color-mix(in srgb, var(--color-surface) 94%, transparent);
-    }
-  }
-
-  /* The scrolled nav bar. Nearly opaque on purpose: the story scrolls colour
-     bands underneath it, and at 72% the summit's green pushed page text
-     through the bar and into the links. Blur is the finish, not the barrier. */
-  /* The classes rail scrolls; the bar under it already reports position. */
-  .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+  .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
 
-  .glass {
-    background: color-mix(in srgb, var(--color-deep) 94%, transparent);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    box-shadow: 0 10px 30px -22px rgb(0 0 0 / 0.55);
+  .tnum { font-variant-numeric: tabular-nums; }
+  @supports (corner-shape: squircle) { .pane, .squircle { corner-shape: squircle; } }
+  .pb-safe { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .skeleton {
+    background: linear-gradient(90deg, var(--p-surface-2) 25%, #e6e2da 50%, var(--p-surface-2) 75%);
+    background-size: 200% 100%; animation: var(--animate-shimmer);
   }
+  .press { transition: transform 160ms var(--ease-out-expo), background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+  .press:active { transform: scale(0.97); }
 
-  .shimmer-btn {
-    background-image: linear-gradient(
-      110deg,
-      var(--color-green) 0%, var(--color-green) 40%,
-      color-mix(in srgb, white 45%, var(--color-green)) 50%,
-      var(--color-green) 60%, var(--color-green) 100%
-    );
-    box-shadow: none;
-    background-size: 200% 100%;
-    animation: var(--animate-shimmer);
-  }
-
-  @property --beam-angle {
-    syntax: "<angle>";
-    inherits: false;
-    initial-value: 0deg;
-  }
-  .border-beam {
-    position: relative;
-  }
-  .border-beam::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    padding: 1px;
-    background: conic-gradient(
-      from var(--beam-angle),
-      transparent 0deg,
-      transparent 300deg,
-      var(--color-lime) 330deg,
-      color-mix(in srgb, var(--color-white) 70%, var(--color-lime)) 345deg,
-      transparent 360deg
-    );
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: beam 5s linear infinite;
-    pointer-events: none;
-  }
-  @keyframes beam {
-    to { --beam-angle: 360deg; }
-  }
-
-  .dot-grid {
-    background-image: radial-gradient(color-mix(in srgb, var(--color-white) 14%, transparent) 1px, transparent 1px);
-    background-size: 22px 22px;
-  }
-
-  .lime-glow {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-lime) 40%, transparent),
-                0 12px 48px -12px color-mix(in srgb, var(--color-lime) 55%, transparent);
-  }
-
-  .grain::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.035;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Fine paper grid behind the hero */
+  .grid-paper {
+    background-image:
+      linear-gradient(to right, rgb(18 19 22 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(18 19 22 / 0.05) 1px, transparent 1px);
+    background-size: 56px 56px;
   }
 }
+
+/* Motion: content that animates in starts hidden only when the script has
+   confirmed it will run (html.motion-ok, set in <head>), so nothing is ever
+   invisible for no-JS or reduced-motion visitors. A 3 s failsafe removes it. */
+html.motion-ok [data-reveal] { opacity: 0; }
+html.motion-ok [data-reveal="lines"] { opacity: 1; visibility: hidden; }
+
+/* ScrollSmoother */
+#smooth-wrapper { overflow: hidden; }
+
+/* Accordion: smooth height via grid rows */
+.acc-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 360ms var(--ease-out-expo); }
+.acc-body > div { overflow: hidden; }
+[data-open="true"] > .acc-body { grid-template-rows: 1fr; }
+
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; }
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes scrollcue { 0% { transform: translateY(-100%); } 60%, 100% { transform: translateY(200%); } }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }

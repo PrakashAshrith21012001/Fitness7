@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { BLUR } from "@/lib/blur";
 
 /**
  * Web versions of the app's primitives (mobile/src/components/cult.tsx), so
@@ -81,7 +82,19 @@ export function Photo({
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={src} alt={alt} loading={priority ? "eager" : "lazy"} decoding="async" className={cn("absolute inset-0 size-full object-cover", className)} />;
   }
-  return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} quality={82} className={cn("object-cover", className)} />;
+  const blur = BLUR[src];
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      sizes={sizes}
+      priority={priority}
+      placeholder={blur ? "blur" : "empty"}
+      blurDataURL={blur}
+      className={cn("object-cover", className)}
+    />
+  );
 }
 
 export function Scrim({ className }: { className?: string }) {

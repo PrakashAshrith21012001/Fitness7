@@ -612,10 +612,9 @@ export const faqs: Faq[] = [
 /* ------------------------------------------------------------------ */
 
 export const navLinks = [
-  { href: "#classes", label: "Classes" },
+  { href: "#timetable", label: "Timetable" },
   { href: "#treks", label: "Treks" },
-  { href: "#transform", label: "Transform" },
+  { href: "#coaching", label: "Coaching" },
   { href: "#plans", label: "Plans" },
-  { href: "#eat-well", label: "Eat well" },
   { href: "#visit", label: "Visit" },
 ] as const;

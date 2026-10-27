@@ -1,64 +1,66 @@
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
-import { BackToTop } from "@/components/BackToTop";
 import { ChatWidget } from "@/components/assistant/ChatWidget";
 import { SiteNotice } from "@/components/sections/SiteNotice";
-import { HeroCarousel } from "@/components/app/HeroCarousel";
-import { QuickActions } from "@/components/app/QuickActions";
-import { ClassesBooking } from "@/components/app/ClassesBooking";
-import { Discover } from "@/components/app/Discover";
-import { Treks } from "@/components/app/Treks";
-import { Coaches } from "@/components/app/Coaches";
-import { Transform, Questions } from "@/components/app/Transform";
-import { Plans } from "@/components/app/Plans";
-import { EatWell } from "@/components/app/EatWell";
-import { FitEdit, People } from "@/components/app/Community";
-import { VisitUs } from "@/components/app/VisitUs";
 import { MobileBar } from "@/components/app/MobileBar";
+import { Toaster } from "@/components/site/Toaster";
+import { SmoothScroll } from "@/components/home/SmoothScroll";
+import { Hero } from "@/components/home/Hero";
+import { Marquee } from "@/components/home/Marquee";
+import { Programs } from "@/components/home/Programs";
+import { Timetable } from "@/components/home/Timetable";
+import { Treks } from "@/components/home/Treks";
+import { Numbers } from "@/components/home/Numbers";
+import { Coaching } from "@/components/home/Coaching";
+import { Plans } from "@/components/home/Plans";
+import { Voices, Questions } from "@/components/home/Voices";
+import { VisitUs } from "@/components/home/VisitUs";
+import { Closing } from "@/components/home/Closing";
 import { getPublishedTreks, getActiveAnnouncements } from "@/server/treks";
 
 export const revalidate = 60;
 
-/** Today's IST calendar day — treks are filtered to upcoming, soonest first (the app's `upcoming`). */
+/** Today's IST calendar day — treks are filtered to upcoming, soonest first. */
 function istToday() {
   return new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 10);
 }
 
 /**
- * The website, built from the app's screens (design v4): Home's hero
- * carousel and quick actions, Fitness → classes with day slots, Discover,
- * the Treks tab, trainers, the Transform tab, F7 pass plans and store strip,
- * nutrition, the video strip, people & testimonials, FAQ, and the centre card.
- * Same photos as the app (web/public/photos ← mobile/assets/photos).
+ * v20 — light, editorial, motion-led. The page answers a visitor in the
+ * order they ask: what is this (hero) → what do you train → when → what's
+ * special (treks) → proof → who coaches → cost → what members say →
+ * questions → where → book. One primary action throughout: a free session.
+ * Fixed UI (nav, phone bar, chat, toasts) sits outside the smooth scroller.
  */
 export default async function Home() {
   const [{ treks }, notices] = await Promise.all([getPublishedTreks(), getActiveAnnouncements("site")]);
-  const todayIst = istToday();
-  const upcoming = treks.filter((t) => t.date >= todayIst).sort((a, b) => a.date.localeCompare(b.date));
+  const today = istToday();
+  const upcoming = treks.filter((t) => t.date >= today).sort((a, b) => a.date.localeCompare(b.date));
 
   return (
     <>
       <Nav />
-      <main>
-        <HeroCarousel />
-        <SiteNotice notices={notices} />
-        <QuickActions />
-        <ClassesBooking />
-        <Discover />
-        <Treks treks={upcoming.length ? upcoming : treks} />
-        <Coaches />
-        <Transform />
-        <Plans />
-        <EatWell />
-        <FitEdit />
-        <People />
-        <Questions />
-        <VisitUs />
-      </main>
-      <Footer />
+      <SmoothScroll>
+        <main>
+          <Hero />
+          <SiteNotice notices={notices} />
+          <Marquee />
+          <Programs />
+          <Timetable />
+          <Treks treks={upcoming.length ? upcoming : treks} />
+          <Numbers />
+          <Coaching />
+          <Plans />
+          <Voices />
+          <Questions />
+          <VisitUs />
+          <Closing />
+        </main>
+        <Footer />
+      </SmoothScroll>
       <MobileBar />
-      <BackToTop />
       <ChatWidget />
+      <Toaster />
     </>
   );
 }

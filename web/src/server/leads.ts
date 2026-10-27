@@ -21,7 +21,8 @@ export type Lead = {
  */
 const STORE = path.join(process.cwd(), ".data", "leads.jsonl");
 
-export async function appendLead(lead: Lead) {
+/** Saves a lead. Returns false when it was already saved (same id — an idempotent retry). */
+export async function appendLead(lead: Lead): Promise<boolean> {
   const c = admin();
   if (c) {
     const { error } = await c.from("leads").insert({
@@ -33,12 +34,14 @@ export async function appendLead(lead: Lead) {
       source: lead.source,
       created_at: lead.createdAt,
     });
-    if (!error) return;
+    if (!error) return true;
+    if (error.code === "23505") return false; // duplicate id: this enquiry was already saved
     // Don't lose an enquiry because the database hiccuped — fall through to the file.
     console.error("leads: supabase insert failed, falling back to file", error.message);
   }
   await fs.mkdir(path.dirname(STORE), { recursive: true });
   await fs.appendFile(STORE, JSON.stringify(lead) + "\n", "utf8");
+  return true;
 }
 
 export async function readLeads(limit = 100): Promise<Lead[]> {
