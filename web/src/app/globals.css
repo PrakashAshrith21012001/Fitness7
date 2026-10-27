@@ -7,7 +7,7 @@
 /* Token names are kept from earlier versions so admin pages and the   */
 /* privacy pages pick the new look up without edits.                   */
 /* ------------------------------------------------------------------ */
-:root {
+:root, :root[data-theme="light"] {
   --p-bg: #f4f2ed;          /* paper */
   --p-deep: #ebe8e1;        /* a band one step deeper */
   --p-surface: #ffffff;     /* cards */
@@ -25,7 +25,35 @@
   --p-gold: #a86a12;
   --p-blue: #2f5bd3;
   --page-bg: #f4f2ed;
+  --p-grid: rgb(18 19 22 / 0.05);
+  --p-shimmer: #e6e2da;
+  --p-clay: #e8e3d9;        /* 3D figure skin */
   color-scheme: light;
+}
+/* Dark: the same layout at night — near-black canvas, raised graphite cards,
+   paper-white type. Ink sections invert to paper automatically. */
+:root[data-theme="dark"] {
+  --p-bg: #0e0f12;
+  --p-deep: #15161a;
+  --p-surface: #17181c;
+  --p-surface-2: #212328;
+  --p-solid: #17181c;
+  --p-line: #2b2d33;
+  --p-fg: #f2f0ea;
+  --p-muted: #a3a6ae;
+  --p-accent: #9fd14f;
+  --p-brand: #8cba3d;
+  --p-green: #9fd14f;
+  --p-accent-deep: #8cba3d;
+  --p-on-accent: #0e0f12;
+  --p-pink: #f2f0ea;
+  --p-gold: #e3a92b;
+  --p-blue: #8aa8ff;
+  --page-bg: #0e0f12;
+  --p-grid: rgb(242 240 234 / 0.05);
+  --p-shimmer: #2a2c31;
+  --p-clay: #c9c4b9;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -76,6 +104,7 @@
     background: var(--p-bg);
   }
   body {
+    transition: background-color 0.4s ease, color 0.4s ease;
     background: var(--p-bg);
     color: var(--p-fg);
     font-family: var(--font-sans);
@@ -120,11 +149,11 @@
   /* Buttons: ink pill for the one primary action, outlined pill for everything else */
   .btn-primary, .btn-pink, .btn-green {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-    background: var(--p-fg); color: #fff; font-weight: 700; font-size: 15px;
+    background: var(--p-fg); color: var(--p-bg); font-weight: 700; font-size: 15px;
     border-radius: 999px; transition: transform 200ms var(--ease-out-expo), background-color 200ms ease, box-shadow 200ms ease;
     box-shadow: 0 10px 30px -12px rgb(18 19 22 / 0.45);
   }
-  .btn-primary:hover, .btn-pink:hover, .btn-green:hover { background: #26282d; }
+  .btn-primary:hover, .btn-pink:hover, .btn-green:hover { background: color-mix(in srgb, var(--p-fg) 86%, var(--p-bg)); }
   .btn-primary:active, .btn-pink:active, .btn-green:active { transform: scale(0.97); }
   .btn-secondary {
     display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
@@ -132,7 +161,7 @@
     border: 1.5px solid var(--p-fg); border-radius: 999px;
     transition: background-color 200ms ease, color 200ms ease, transform 200ms var(--ease-out-expo);
   }
-  .btn-secondary:hover { background: var(--p-fg); color: #fff; }
+  .btn-secondary:hover { background: var(--p-fg); color: var(--p-bg); }
   .btn-secondary:active { transform: scale(0.97); }
   .btn-ghost { border: 1px solid var(--p-line); border-radius: 999px; font-weight: 700; transition: background-color 200ms ease; }
   .btn-ghost:hover { background: var(--p-surface-2); }
@@ -151,7 +180,7 @@
   @supports (corner-shape: squircle) { .pane, .squircle { corner-shape: squircle; } }
   .pb-safe { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
   .skeleton {
-    background: linear-gradient(90deg, var(--p-surface-2) 25%, #e6e2da 50%, var(--p-surface-2) 75%);
+    background: linear-gradient(90deg, var(--p-surface-2) 25%, var(--p-shimmer) 50%, var(--p-surface-2) 75%);
     background-size: 200% 100%; animation: var(--animate-shimmer);
   }
   .press { transition: transform 160ms var(--ease-out-expo), background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
@@ -160,8 +189,8 @@
   /* Fine paper grid behind the hero */
   .grid-paper {
     background-image:
-      linear-gradient(to right, rgb(18 19 22 / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(18 19 22 / 0.05) 1px, transparent 1px);
+      linear-gradient(to right, var(--p-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--p-grid) 1px, transparent 1px);
     background-size: 56px 56px;
   }
 }
@@ -186,3 +215,6 @@ html.motion-ok [data-reveal="lines"] { opacity: 1; visibility: hidden; }
 @keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes scrollcue { 0% { transform: translateY(-100%); } 60%, 100% { transform: translateY(200%); } }
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* Theme switch: the new theme is revealed by a growing circle (see ThemeToggle) */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }

@@ -1,21 +1,60 @@
 "use client";
 
-import { useRef } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowUpRight, Dumbbell, Flame, HeartPulse, Sparkles, Swords, Target, Wind, Zap, type LucideIcon } from "lucide-react";
 import { classes, wa } from "@f7/content";
 import { gsap, prefersReducedMotion, useGSAP } from "@/lib/gsap";
+import { athlete, EXERCISE_FOR } from "@/lib/athlete";
+import { useTheme } from "@/components/theme/useTheme";
+
+const Athlete3D = dynamic(() => import("@/components/home/Athlete3D"), { ssr: false, loading: () => <div className="size-full" /> });
+const noop = () => () => {};
 
 /**
  * "What we train" — on desktop the section pins and the programmes slide
  * past sideways as you scroll down, each card swinging in on its hinge (3D)
  * as it arrives. On phones it's a swipeable row. No photos: the type and the
- * numbers carry it.
+ * numbers carry it. A 3D athlete demonstrates each programme as its card
+ * arrives — squats, jumping jacks, swings, running, yoga, lunges, presses,
+ * punches — blending from one movement to the next.
  */
 const ICON: Record<string, LucideIcon> = { Dumbbell, Flame, Zap, HeartPulse, Wind, Sparkles, Target, Swords };
 
 export function Programs() {
   const section = useRef<HTMLElement>(null);
   const track = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [inView, setInView] = useState(false);
+  const [theme] = useTheme();
+  const still = useSyncExternalStore(noop, prefersReducedMotion, () => false);
+
+  const show = (i: number) => {
+    const c = classes[Math.max(0, Math.min(classes.length - 1, i))];
+    athlete.exercise = EXERCISE_FOR[c.id]?.id ?? "squat";
+    setActive((v) => (v === i ? v : i));
+  };
+
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { rootMargin: "200px" });
+    io.observe(el);
+    // phones: the card snapped into view picks the movement
+    const row = track.current;
+    const onRow = () => {
+      if (!row || window.innerWidth >= 1024) return;
+      const card = row.querySelector<HTMLElement>("[data-card]");
+      const w = (card?.offsetWidth ?? 300) + 16;
+      show(Math.round(row.scrollLeft / w));
+    };
+    row?.addEventListener("scroll", onRow, { passive: true });
+    return () => {
+      io.disconnect();
+      row?.removeEventListener("scroll", onRow);
+    };
+  }, []);
 
   useGSAP(
     () => {
@@ -35,6 +74,7 @@ export function Programs() {
             scrub: 1,
             invalidateOnRefresh: true,
             anticipatePin: 1,
+            onUpdate: (self) => show(Math.min(classes.length - 1, Math.floor(self.progress * classes.length * 1.08))),
           },
         });
         gsap.utils.toArray<HTMLElement>("[data-card]", el).forEach((card) => {
@@ -60,7 +100,7 @@ export function Programs() {
     <section ref={section} id="programs" className="relative overflow-hidden py-20 sm:py-28 lg:flex lg:h-[100svh] lg:items-center lg:py-0">
       <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:max-w-none lg:px-0">
         <div className="lg:flex lg:items-center">
-          <header className="lg:w-[34vw] lg:shrink-0 lg:pl-[max(2rem,calc((100vw-80rem)/2+2rem))] lg:pr-10">
+          <header className="lg:w-[38vw] lg:shrink-0 lg:pl-[max(2rem,calc((100vw-80rem)/2+2rem))] lg:pr-10">
             <p className="eyebrow">What we train</p>
             <h2 data-reveal="lines" className="h-section mt-3 text-fg">
               Eight ways to get stronger.
@@ -68,7 +108,20 @@ export function Programs() {
             <p className="mt-4 max-w-sm text-base leading-relaxed text-muted">
               Every session is coached. Scale it to where you are today — nobody sits out.
             </p>
-            <p className="mt-6 hidden text-sm font-semibold text-muted lg:block">Keep scrolling →</p>
+
+            {/* the 3D athlete, demonstrating the card in view */}
+            <div className="relative mt-6 rounded-[24px] bg-surface ring-1 ring-line">
+              <div ref={stage} className="h-[300px] sm:h-[340px] lg:h-[min(38vh,360px)]" aria-hidden>
+                <Athlete3D active={inView} dark={theme === "dark"} still={still} />
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-3" aria-live="polite">
+                <span className="min-w-0">
+                  <span className="cond tnum mr-2 text-lg text-muted">{String(active + 1).padStart(2, "0")}</span>
+                  <span className="text-sm font-bold text-fg">{EXERCISE_FOR[classes[active].id]?.label}</span>
+                </span>
+                <span className="truncate text-xs text-muted">{classes[active].name}</span>
+              </div>
+            </div>
           </header>
 
           <div className="relative mt-8 lg:mt-0 lg:min-w-0 lg:flex-1 lg:[clip-path:inset(-40%_-100vw_-40%_0)]" style={{ perspective: "1400px" }}>
@@ -80,6 +133,7 @@ export function Programs() {
                   <article
                     key={c.id}
                     data-card
+                    onPointerEnter={() => show(i)}
                     className="pane group flex h-[420px] w-[78vw] max-w-[340px] shrink-0 flex-col p-6 transition-shadow duration-300 hover:shadow-[0_30px_60px_-30px_rgba(18,19,22,0.35)] sm:w-[340px] lg:h-[460px] lg:w-[360px] lg:max-w-none"
                   >
                     <div className="flex items-start justify-between">

@@ -109,7 +109,7 @@ export function Plans() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`press flex h-12 items-center justify-center rounded-full text-sm font-bold ${
-                      popular ? "bg-paper text-fg hover:bg-[#fff]" : "border-[1.5px] border-fg text-fg hover:bg-fg hover:text-paper"
+                      popular ? "bg-paper text-fg hover:opacity-90" : "border-[1.5px] border-fg text-fg hover:bg-fg hover:text-paper"
                     }`}
                   >
                     Choose {item.name.replace("F7 pass ", "")}

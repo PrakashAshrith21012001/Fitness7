@@ -3,6 +3,7 @@ import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource/barlow-condensed/600.css";
 import "@fontsource/barlow-condensed/700.css";
 import "./globals.css";
+import { ThemeScript } from "@/components/theme/ThemeScript";
 import { brand, contact, addressLine, reviews } from "@f7/content";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fitness7gym.in";
@@ -42,8 +43,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f4f2ed",
-  colorScheme: "light",
+  themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#0e0f12" }, { media: "(prefers-color-scheme: light)", color: "#f4f2ed" }],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -86,8 +86,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-IN" data-theme="light" suppressHydrationWarning>
+    <html lang="en-IN" suppressHydrationWarning>
       <head>
+        <ThemeScript />
         {/* Motion gate: hide animate-in content only when JS will animate it; failsafe after 3 s. */}
         <script
           dangerouslySetInnerHTML={{

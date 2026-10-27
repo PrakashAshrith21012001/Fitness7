@@ -8,6 +8,7 @@ import { useOpenStatus } from "@/lib/useOpenStatus";
 import { ScrollTrigger, prefersReducedMotion, useGSAP } from "@/lib/gsap";
 import { heroScroll } from "@/lib/heroScroll";
 import { Magnetic } from "@/components/home/Magnetic";
+import { useTheme } from "@/components/theme/useTheme";
 
 // three.js only loads in the browser, after the words are on screen.
 const Dumbbell3D = dynamic(() => import("@/components/home/Dumbbell3D"), {
@@ -28,6 +29,7 @@ export function Hero() {
   const stage = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(true);
   const still = useSyncExternalStore(noop, prefersReducedMotion, () => false);
+  const [theme] = useTheme();
 
   useEffect(() => {
     const el = stage.current;
@@ -98,7 +100,7 @@ export function Hero() {
         </div>
 
         <div ref={stage} className="relative h-[340px] sm:h-[460px] lg:h-[640px]" aria-hidden>
-          <Dumbbell3D active={inView} still={still} />
+          <Dumbbell3D active={inView} still={still} dark={theme === "dark"} />
           {/* floating facts */}
           <div data-speed="1.08" className="pointer-events-none absolute left-2 top-[12%] hidden sm:left-6 sm:block">
             <div className="glass rounded-2xl border border-line px-4 py-3 shadow-[0_20px_40px_-24px_rgba(18,19,22,0.35)]">

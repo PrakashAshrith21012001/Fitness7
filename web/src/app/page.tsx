@@ -1,6 +1,7 @@
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { ChatWidget } from "@/components/assistant/ChatWidget";
+import { BackToTop } from "@/components/BackToTop";
 import { SiteNotice } from "@/components/sections/SiteNotice";
 import { MobileBar } from "@/components/app/MobileBar";
 import { Toaster } from "@/components/site/Toaster";
@@ -26,7 +27,7 @@ function istToday() {
 }
 
 /**
- * v20 — light, editorial, motion-led. The page answers a visitor in the
+ * v21 — editorial, motion-led, light by default with a dark option. The page answers a visitor in the
  * order they ask: what is this (hero) → what do you train → when → what's
  * special (treks) → proof → who coaches → cost → what members say →
  * questions → where → book. One primary action throughout: a free session.
@@ -59,6 +60,7 @@ export default async function Home() {
         <Footer />
       </SmoothScroll>
       <MobileBar />
+      <BackToTop />
       <ChatWidget />
       <Toaster />
     </>

@@ -34,7 +34,7 @@ export function Closing() {
           </h2>
           <div className="flex w-full flex-col gap-4 sm:w-auto">
             <Magnetic>
-              <a href={wa.trial()} target="_blank" rel="noopener noreferrer" className="press inline-flex h-16 w-full items-center justify-center gap-2 rounded-full bg-paper px-8 text-lg font-bold text-fg hover:bg-[#fff] sm:w-auto">
+              <a href={wa.trial()} target="_blank" rel="noopener noreferrer" className="press inline-flex h-16 w-full items-center justify-center gap-2 rounded-full bg-paper px-8 text-lg font-bold text-fg hover:opacity-90 sm:w-auto">
                 Book a free session <ArrowRight className="size-5" strokeWidth={2.4} />
               </a>
             </Magnetic>

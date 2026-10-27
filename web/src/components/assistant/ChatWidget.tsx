@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Sparkles, X, Send, ArrowUpRight } from "lucide-react";
+import { BotMessageSquare, X, Send, ArrowUpRight } from "lucide-react";
 import { brand, wa } from "@f7/content";
 import { Logo } from "@/components/Logo";
 
@@ -211,9 +211,10 @@ export function ChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Close chat" : `Chat with ${brand.name}`}
-        className="fixed bottom-[84px] right-4 z-50 grid size-14 place-items-center rounded-full bg-pink text-[#fff] shadow-lg ring-[3px] ring-[rgba(255,255,255,0.3)] sm:bottom-6 sm:right-6"
+        className="group fixed bottom-[84px] right-4 z-50 grid size-14 place-items-center rounded-full bg-brand text-[#121316] shadow-[0_14px_30px_-10px_rgba(76,124,21,0.6)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6"
       >
-        {open ? <X className="size-6" strokeWidth={2.2} /> : <Sparkles className="size-6" strokeWidth={2} />}
+        {!open ? <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-brand opacity-25 [animation-duration:2.4s]" /> : null}
+        {open ? <X className="relative size-6" strokeWidth={2.2} /> : <BotMessageSquare className="relative size-6 transition-transform duration-300 group-hover:-rotate-6" strokeWidth={2} />}
         {unread && !open ? (
           <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-ink bg-white" aria-hidden="true" />
         ) : null}

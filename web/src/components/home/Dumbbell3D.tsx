@@ -45,7 +45,7 @@ function Dumbbell({ still }: { still: boolean }) {
     const intro = still ? 1 : 1 - Math.pow(1 - Math.min(1, age / 1.6), 4); // easeOutQuart
     const p = heroScroll.p;
 
-    const idle = still ? 0 : t * 0.25;
+    const idle = still ? 0 : Math.sin(t * 0.45) * 0.55; // sway, never turns plate-on
     const targetY = -0.6 + idle + intro * 0.6 + p * Math.PI * 1.1 + state.pointer.x * 0.35;
     const targetX = 0.28 - p * 0.9 - state.pointer.y * 0.25;
     const targetZ = -0.42 + p * 0.5;
@@ -100,7 +100,7 @@ function Dumbbell({ still }: { still: boolean }) {
   );
 }
 
-export default function Dumbbell3D({ active, still }: { active: boolean; still: boolean }) {
+export default function Dumbbell3D({ active, still, dark = false }: { active: boolean; still: boolean; dark?: boolean }) {
   return (
     <Canvas
       frameloop={active ? "always" : "never"}
@@ -111,9 +111,9 @@ export default function Dumbbell3D({ active, still }: { active: boolean; still: 
     >
       <ambientLight intensity={0.55} />
       <directionalLight position={[3.5, 5, 4]} intensity={2.4} castShadow shadow-mapSize={[1024, 1024]} />
-      <directionalLight position={[-4, 2, -3]} intensity={0.8} color="#dfe8ff" />
+      <directionalLight position={[-4, 2, -3]} intensity={dark ? 2.2 : 0.8} color={dark ? "#b9dd7a" : "#dfe8ff"} />
       <Dumbbell still={still} />
-      <ContactShadows position={[0, -1.25, 0]} opacity={0.32} scale={7} blur={2.6} far={3.2} resolution={512} color="#2a2b30" />
+      <ContactShadows position={[0, -1.25, 0]} opacity={dark ? 0.7 : 0.32} scale={7} blur={2.6} far={3.2} resolution={512} color={dark ? "#000000" : "#2a2b30"} />
       <Environment resolution={256} frames={1}>
         <Lightformer form="rect" intensity={3} position={[0, 4, -1]} scale={[8, 1.4, 1]} />
         <Lightformer form="rect" intensity={1.6} position={[-4, 1, 2]} rotation-y={Math.PI / 2} scale={[4, 6, 1]} />

@@ -7,6 +7,7 @@ import { brand, navLinks, telLink, wa } from "@f7/content";
 import { cn } from "@/lib/cn";
 import { Logo } from "@/components/Logo";
 import { gsap, prefersReducedMotion } from "@/lib/gsap";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 /**
  * Top bar: logo, five places, call, one primary action. Hides while you read
@@ -75,6 +76,7 @@ export function Nav() {
           </ul>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <a href={telLink()} className="hidden size-11 place-items-center rounded-full border border-line text-fg transition-colors hover:bg-surface-2 sm:grid" aria-label="Call the gym">
               <Phone className="size-4" strokeWidth={2} />
             </a>
@@ -93,9 +95,12 @@ export function Nav() {
         <div ref={menu} className="fixed inset-0 z-[60] flex flex-col bg-paper px-5 pb-safe pt-4 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="flex h-14 items-center justify-between">
             <Logo className="h-10" />
-            <button type="button" onClick={() => setOpen(false)} className="grid size-11 place-items-center rounded-full border border-line text-fg" aria-label="Close menu">
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <button type="button" onClick={() => setOpen(false)} className="grid size-11 place-items-center rounded-full border border-line text-fg" aria-label="Close menu">
               <X className="size-5" strokeWidth={2} />
-            </button>
+              </button>
+            </div>
           </div>
           <ul className="mt-8 flex flex-col">
             {navLinks.map((link, i) => (
