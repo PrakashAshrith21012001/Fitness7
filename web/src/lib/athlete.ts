@@ -4,7 +4,7 @@
  * live joint angle back (`angle`, degrees) so the panel can print it without
  * re-rendering React 60 times a second.
  */
-export type Exercise = "squat" | "jacks" | "swing" | "run" | "warrior" | "lunge" | "press" | "box";
+export type Exercise = "squat" | "jacks" | "swing" | "run" | "warrior" | "lunge" | "row" | "box";
 
 export const athlete: { exercise: Exercise; angle: number } = { exercise: "squat", angle: 180 };
 
@@ -22,6 +22,8 @@ export type Move = {
   works: string;
   /** form line: a → pivot → b; the angle is measured at the pivot */
   form: [Joint, Joint, Joint];
+  /** which side's joints the form line uses: 0 = left, 1 = right (default: the leading/near side) */
+  formSide?: 0 | 1;
   formLabel: string;
 };
 
@@ -33,8 +35,8 @@ export const EXERCISE_FOR: Record<string, Move> = {
   cardio: { id: "run", label: "Running", muscles: ["quads", "hams", "calves", "glutes"], works: "Legs · Calves · Lungs", form: ["hip", "knee", "ankle"], formLabel: "Knee" },
   yoga: { id: "warrior", label: "Warrior II", muscles: ["quads", "delts", "obliques"], works: "Legs · Shoulders · Balance", form: ["hip", "knee", "ankle"], formLabel: "Front knee" },
   ladies: { id: "lunge", label: "Dumbbell lunges", muscles: ["quads", "glutes", "hams", "forearms"], works: "Quads · Glutes · Grip", form: ["hip", "knee", "ankle"], formLabel: "Knee" },
-  personal: { id: "press", label: "Overhead press", muscles: ["delts", "triceps", "traps"], works: "Shoulders · Triceps · Traps", form: ["shoulder", "elbow", "wrist"], formLabel: "Elbow" },
-  combat: { id: "box", label: "Jab–cross", muscles: ["delts", "pecs", "triceps", "obliques"], works: "Shoulders · Chest · Core", form: ["shoulder", "elbow", "wrist"], formLabel: "Elbow" },
+  personal: { id: "row", label: "One-arm dumbbell row", muscles: ["lats", "biceps", "delts"], works: "Lats · Rear delts · Biceps", form: ["shoulder", "elbow", "wrist"], formSide: 1, formLabel: "Elbow" },
+  combat: { id: "box", label: "Jab–cross", muscles: ["delts", "triceps", "obliques"], works: "Shoulders · Triceps · Core", form: ["shoulder", "elbow", "wrist"], formLabel: "Elbow" },
 };
 
 export const MOVE_BY_EXERCISE = Object.fromEntries(Object.values(EXERCISE_FOR).map((m) => [m.id, m])) as Record<Exercise, Move>;

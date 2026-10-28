@@ -15,7 +15,7 @@ const noop = () => () => {};
  * past sideways as you scroll down, each card swinging in on its hinge (3D)
  * as it arrives. On phones it's a swipeable row. No photos: the type and the
  * numbers carry it. A 3D athlete demonstrates each programme as its card
- * arrives — squats, jumping jacks, swings, running, yoga, lunges, presses,
+ * arrives — squats, jumping jacks, swings, running, yoga, lunges, a row,
  * punches — blending from one movement to the next.
  */
 const ICON: Record<string, LucideIcon> = { Dumbbell, Flame, Zap, HeartPulse, Wind, Sparkles, Target, Swords };
