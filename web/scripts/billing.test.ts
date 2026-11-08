@@ -1,6 +1,7 @@
 /* Run: npx tsx web/scripts/billing.test.ts — checks the date maths and stages behind renewals. */
 import assert from "node:assert/strict";
-import { endFor, renewalStart, stageOf, stepFor, normalizePhone, daysBetween, reminderText, receiptText } from "../src/lib/billing";
+import { endFor, renewalStart, stageOf, stepFor, normalizePhone, daysBetween, reminderText, receiptText, upiUri, nudgeText, paidText } from "../src/lib/billing";
+import { signPayToken, verifyPayToken } from "../src/lib/paytoken";
 
 let n = 0;
 const t = (name: string, fn: () => void) => { fn(); n++; };
@@ -64,4 +65,27 @@ t("messages", () => {
   assert.match(r, /₹3,000/);
   assert.match(r, /7 Feb 2027/);
 });
-console.log(`billing: ${n}/6 groups passed`);
+t("pay links", () => {
+  const id = "a1111111-2222-4333-8444-555555555555";
+  const tok = signPayToken(id, "2026-11-14", "secret-1")!;
+  assert.equal(tok.length, 56);
+  assert.deepEqual(verifyPayToken(tok, "secret-1"), { memberId: id, endsOn: "2026-11-14" });
+  assert.equal(verifyPayToken(tok, "other-secret"), null); // wrong key
+  assert.equal(verifyPayToken(tok.slice(0, 40) + "0".repeat(16), "secret-1"), null); // forged signature
+  const moved = tok.replace("20261114", "20261214");
+  assert.equal(verifyPayToken(moved, "secret-1"), null); // can't edit the date
+  assert.equal(verifyPayToken("nonsense", "secret-1"), null);
+  assert.equal(signPayToken("not-a-uuid", "2026-11-14", "s"), null);
+  assert.equal(signPayToken(id, "2026-11-14", ""), null); // no secret → no links
+});
+t("upi + phase 2 messages", () => {
+  const u = upiUri({ vpa: "fitness7@okaxis", payee: "Fitness 7 Gym Unisex", amount: 1200, note: "F7 Monthly Arun" });
+  assert.ok(u.startsWith("upi://pay?pa=fitness7%40okaxis&pn=Fitness%207%20Gym%20Unisex&am=1200.00&cu=INR&tn=F7%20Monthly%20Arun"), u);
+  assert.ok(!upiUri({ vpa: "x@y", payee: "G", amount: 0, note: "n" }).includes("am="));
+  const m = reminderText("t-7", { name: "Arun", plan: "Monthly", end: "2026-11-15", amount: 1200, upi: "fitness7@okaxis", payUrl: "https://fitness7gym.in/pay/abc" });
+  assert.match(m, /https:\/\/fitness7gym\.in\/pay\/abc/);
+  assert.doesNotMatch(m, /Pay by UPI to/);
+  assert.match(nudgeText("Divya M", 12), /Hi Divya! .* 12 days/);
+  assert.match(paidText({ name: "Arun", phone: "9876543210", plan: "Monthly", amount: 1200 }), /₹1,200[\s\S]*\+91 98765 43210[\s\S]*UTR/);
+});
+console.log(`billing: ${n}/8 groups passed`);

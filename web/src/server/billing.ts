@@ -1,7 +1,8 @@
 import "server-only";
 import { admin } from "./supabase";
 import { istToday, plusDays } from "./admin-data";
-import { planById, stageOf, stepFor, type ReminderStep, type Stage } from "@/lib/billing";
+import { AT_RISK_DAYS, daysBetween, planById, stageOf, stepFor, STEP_PRIORITY, type ReminderStep, type Stage } from "@/lib/billing";
+import { signPayToken, verifyPayToken } from "@/lib/paytoken";
 
 /**
  * Reads and writes for renewals & billing (migration-005). Every read tolerates
@@ -243,4 +244,83 @@ export async function addDeskMember(name: string, phone91: string): Promise<{ ok
   // the on_auth_user_created trigger made the members row; fill in what we know
   await a.from("members").upsert({ id, name, phone: phone91, provider: "phone", onboarded: false }, { onConflict: "id" });
   return { ok: true, id, existed: false };
+}
+
+/* ---------------- Phase 2: pay links, at-risk, today's list ---------------- */
+
+const paySecret = () => (process.env.PAY_LINK_SECRET || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+const SITE = () => (process.env.NEXT_PUBLIC_SITE_URL ?? "https://fitness7gym.in").replace(/\/$/, "");
+export const gymUpi = () => process.env.GYM_UPI_ID?.trim() || null;
+
+/** The renewal pay link for a member's current end date — null until GYM_UPI_ID is set. */
+export function payLinkFor(memberId: string, endsOn: string | null | undefined): string | null {
+  if (!gymUpi() || !endsOn) return null;
+  const t = signPayToken(memberId, endsOn, paySecret());
+  return t ? `${SITE()}/pay/${t}` : null;
+}
+
+export function readPayToken(token: string) {
+  return verifyPayToken(token, paySecret());
+}
+
+/** What the public pay page needs. Never returns more than the member's first name and plan. */
+export async function payPageData(memberId: string): Promise<{ name: string; phone: string | null; plan_id: string | null; plan_name: string | null; renews_on: string | null } | null> {
+  const a = admin();
+  if (!a) return null;
+  const { data } = await a.from("members").select("name, phone, plan_id, plan_name, renews_on").eq("id", memberId).maybeSingle();
+  return (data as { name: string; phone: string | null; plan_id: string | null; plan_name: string | null; renews_on: string | null } | null) ?? null;
+}
+
+export type AtRiskMember = { id: string; name: string; phone: string | null; plan_name: string | null; renews_on: string; last_checkin: string; away: number; nudgedAt: string | null };
+
+/**
+ * Members whose plan is still running, who used to check in, but haven't for
+ * AT_RISK_DAYS+ days — the people most likely not to renew. Anyone nudged in
+ * the last 14 days is listed with `nudgedAt` so nobody gets messaged twice.
+ */
+export async function atRisk(): Promise<AtRiskMember[]> {
+  const a = admin();
+  if (!a) return [];
+  const today = istToday();
+  const { data, error } = await a
+    .from("admin_member_summary")
+    .select("id, name, phone, plan_name, renews_on, last_checkin, checkin_count")
+    .gte("renews_on", today)
+    .gt("checkin_count", 0)
+    .lte("last_checkin", plusDays(today, -AT_RISK_DAYS))
+    .order("last_checkin")
+    .limit(60);
+  if (error || !data) return [];
+  const rows = data as { id: string; name: string; phone: string | null; plan_name: string | null; renews_on: string; last_checkin: string }[];
+  const ids = rows.map((r) => r.id);
+  const { data: rem } = ids.length
+    ? await a.from("reminders").select("member_id, sent_at").eq("step", "nudge").in("member_id", ids).gte("sent_at", plusDays(today, -14))
+    : { data: [] };
+  const nudged = new Map<string, string>();
+  for (const r of (rem ?? []) as { member_id: string; sent_at: string }[]) if (!nudged.has(r.member_id)) nudged.set(r.member_id, r.sent_at);
+  return rows.map((r) => ({ ...r, last_checkin: r.last_checkin.slice(0, 10), away: daysBetween(r.last_checkin.slice(0, 10), today), nudgedAt: nudged.get(r.id) ?? null }));
+}
+
+export type SendItem = { id: string; name: string; phone: string; kind: ReminderStep | "nudge"; detail: string; amount: number; href: string };
+
+/** Today's send list, most urgent first: renewal reminders not yet sent, then we-miss-you notes. */
+export async function sendList(): Promise<{ ready: boolean; items: SendItem[] }> {
+  const [{ ready, members }, risk] = await Promise.all([duesBoard(), atRisk()]);
+  const due = members
+    .filter((m) => m.step && !m.remindedForStep && m.phone)
+    .sort((x, y) => STEP_PRIORITY.indexOf(x.step!) - STEP_PRIORITY.indexOf(y.step!) || x.days - y.days)
+    .map<SendItem>((m) => ({
+      id: m.id,
+      name: m.name || "—",
+      phone: m.phone!,
+      kind: m.step!,
+      detail: m.days > 0 ? `ends ${m.renews_on.slice(8)}/${m.renews_on.slice(5, 7)} · in ${m.days} day${m.days === 1 ? "" : "s"}` : m.days === 0 ? "ends today" : `ended ${-m.days} day${m.days === -1 ? "" : "s"} ago`,
+      amount: m.expected,
+      href: `/admin/remind?m=${m.id}`,
+    }));
+  const seen = new Set(due.map((d) => d.id));
+  const nudges = risk
+    .filter((r) => !r.nudgedAt && r.phone && !seen.has(r.id))
+    .map<SendItem>((r) => ({ id: r.id, name: r.name || "—", phone: r.phone!, kind: "nudge", detail: `no visit for ${r.away} days · plan runs till ${r.renews_on.slice(8)}/${r.renews_on.slice(5, 7)}`, amount: 0, href: `/admin/remind?m=${r.id}&step=nudge` }));
+  return { ready, items: [...due, ...nudges] };
 }

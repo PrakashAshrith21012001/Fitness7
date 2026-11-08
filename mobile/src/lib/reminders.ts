@@ -30,6 +30,8 @@ export type ReminderInput = {
   sleepLoggedToday?: boolean;
   /** Weekly weigh-in, Mondays 7 am */
   weighIn?: boolean;
+  /** Membership end date (yyyy-mm-dd) — renewal nudges at 7 and 3 days, and on the day. Null when off or no plan. */
+  renewal?: { planId: string; planName: string; endsOn: string } | null;
 };
 
 function hhmm(t: string): [number, number] {
@@ -157,6 +159,24 @@ export function planReminders(input: ReminderInput): Planned[] {
     const d = new Date();
     const toMon = (8 - d.getDay()) % 7 || 7;
     add({ id: "wt", when: at(d.getDay() === 1 && d.getHours() < 7 ? 0 : toMon, 7, 0), title: "Weigh-in Monday", body: "Same time, same scale — log it before breakfast.", url: "/food/weight?add=1" });
+  }
+  if (input.renewal) {
+    const [y, mo, d] = input.renewal.endsOn.split("-").map(Number);
+    const end = new Date(y, mo - 1, d);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysLeft = Math.round((end.getTime() - today.getTime()) / 86_400_000);
+    const url = `/upgrade/${input.renewal.planId}`;
+    const plan = input.renewal.planName;
+    const steps: [number, string, string][] = [
+      [7, "7 days left on your pass", `${name}your ${plan} pass runs till ${d}/${mo}. Renew now and keep the streak.`],
+      [3, "3 days left on your pass", `Your ${plan} pass ends on ${d}/${mo}. Tap to renew — UPI, desk or WhatsApp.`],
+      [0, "Your pass ends today", `Renew today to keep training tomorrow without a break.`],
+    ];
+    for (const [before, title, body] of steps) {
+      const offset = daysLeft - before;
+      if (offset >= 0 && offset <= 60) add({ id: `renew-${before}`, when: at(offset, 10, 0), title, body, url });
+    }
   }
   return out;
 }

@@ -107,7 +107,13 @@ export function stepFor(stage: Stage, days: number): ReminderStep | null {
       return null;
   }
 }
-export const STEP_LABEL: Record<ReminderStep | "receipt", string> = { "t-7": "7-day reminder", "t-3": "3-day reminder", due: "due-today reminder", grace: "grace reminder", lapsed: "lapsed check-in", winback: "win-back offer", receipt: "receipt" };
+export const STEP_LABEL: Record<ReminderStep | "receipt" | "nudge", string> = { "t-7": "7-day reminder", "t-3": "3-day reminder", due: "due-today reminder", grace: "grace reminder", lapsed: "lapsed check-in", winback: "win-back offer", receipt: "receipt", nudge: "we-miss-you note" };
+
+/** Order of today's send list: the most urgent first. */
+export const STEP_PRIORITY: ReminderStep[] = ["due", "grace", "t-3", "t-7", "lapsed", "winback"];
+
+/** Members with an active pass who used to check in but haven't for this many days. */
+export const AT_RISK_DAYS = 10;
 
 /* ---------------- formatting ---------------- */
 
@@ -132,12 +138,17 @@ export const phoneDisplay = (p: string | null | undefined) => {
 
 /* ---------------- WhatsApp messages ---------------- */
 
-type MsgInput = { name: string; plan: string | null; end: string; amount?: number | null; upi?: string | null };
+type MsgInput = { name: string; plan: string | null; end: string; amount?: number | null; upi?: string | null; payUrl?: string | null };
 
 export function reminderText(step: ReminderStep, m: MsgInput) {
   const hi = `Hi ${first(m.name)}!`;
   const plan = m.plan ? `${brand.name} ${m.plan} pass` : `${brand.name} membership`;
-  const pay = [m.amount ? `Renewal: ${inr(m.amount)}.` : null, m.upi ? `Pay by UPI to ${m.upi}, or at the desk.` : "Pay at the desk, or reply here for the UPI details."].filter(Boolean).join(" ");
+  const how = m.payUrl
+    ? `Renew in a minute with any UPI app: ${m.payUrl} — or pay at the desk.`
+    : m.upi
+      ? `Pay by UPI to ${m.upi}, or at the desk.`
+      : "Pay at the desk, or reply here for the UPI details.";
+  const pay = [m.amount ? `Renewal: ${inr(m.amount)}.` : null, how].filter(Boolean).join(" ");
   switch (step) {
     case "t-7":
       return `${hi} Your ${plan} is valid till ${dayMonth(m.end)} — 7 days to go. ${pay} Keep the streak going 💪`;
@@ -152,6 +163,29 @@ export function reminderText(step: ReminderStep, m: MsgInput) {
     case "winback":
       return `${hi} It's been a while — come back to ${brand.name} this month with no re-joining fee. Reply YES and we'll get you started again.`;
   }
+}
+
+/** For an active member who has stopped coming — a check-in, not a sales message. */
+export function nudgeText(name: string, daysAway: number) {
+  return `Hi ${first(name)}! We haven't seen you at ${brand.name} for ${daysAway} days — all good? If the timing isn't working, tell us and we'll find you a better slot. Your plan is still running 💪`;
+}
+
+/**
+ * UPI deep link (NPCI "upi://pay"). Opens GPay / PhonePe / Paytm with the
+ * payee, amount and note filled in. `tr` is our reference so the desk can
+ * match the payment to the member.
+ */
+export function upiUri(p: { vpa: string; payee: string; amount: number; note: string; ref?: string }) {
+  const q = new URLSearchParams({ pa: p.vpa, pn: p.payee });
+  if (p.amount > 0) q.set("am", p.amount.toFixed(2));
+  q.set("cu", "INR");
+  q.set("tn", p.note.slice(0, 50));
+  if (p.ref) q.set("tr", p.ref);
+  return "upi://pay?" + q.toString().replace(/\+/g, "%20");
+}
+
+export function paidText(p: { name: string; phone: string | null; plan: string; amount: number }) {
+  return `Hi ${brand.name}, I've paid ${inr(p.amount)} by UPI to renew my ${p.plan} pass.\nName: ${p.name}${p.phone ? `\nPhone: ${phoneDisplay(p.phone)}` : ""}\nUPI ref (UTR): `;
 }
 
 export function receiptText(r: { name: string; plan: string; amount: number; starts: string; ends: string; receiptNo: string; url: string }) {

@@ -83,3 +83,12 @@ Optional settings on Render (Environment):
 
 - `GYM_UPI_ID` — e.g. `fitness7@okaxis`. If set, reminders say "Pay by UPI to …".
 - `GYM_GSTIN` — printed on receipts once the gym is GST-registered.
+
+## Renewals Phase 2 (pay links, today's list, at-risk)
+
+1. SQL editor → run `migration-006-nudges.sql` (lets the reminders log record "we miss you" notes).
+2. Render → Environment → `GYM_UPI_ID` = the gym's UPI ID (e.g. `fitness7@okaxis`). With it set, every 7-day / 3-day / due / grace reminder carries a link to `/pay/<token>`: the plan, the next period, the price, a button that opens the member's UPI app with the amount filled in, a QR, and "I've paid" (WhatsApps the gym so the desk can record it). Money goes straight to the gym's account — no gateway, no fee.
+3. Optional: `PAY_LINK_SECRET` (any long random string) signs the pay links. If unset, the Supabase secret key is used. Changing it invalidates links already sent.
+4. `/admin/dues/today` — the day's WhatsApp list, most urgent first, one tap each.
+5. "At risk" — members whose plan is running but who haven't checked in for 10+ days (only members who use app check-ins).
+6. App: renewal notifications at 7 days, 3 days and on the day, 10 am (Settings → Renewals). Ships with the next app build.

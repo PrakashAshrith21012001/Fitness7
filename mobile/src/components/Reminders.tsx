@@ -59,7 +59,7 @@ export function Reminders() {
   const { state: tr } = useTracker();
   const member = s.member;
   const sleepLoggedToday = !!tr.sleep[today()];
-  const sig = JSON.stringify([member?.id, member?.notifications.meals, member?.notifications.water, s.logged, Math.round(s.waterMl / 50), s.waterGoalMl, s.glassMl, tr.sleepWelcomed && tr.remindBed && tr.bed, tr.sleepWelcomed && tr.remindWake && tr.wake, sleepLoggedToday, tr.weightReminder]);
+  const sig = JSON.stringify([member?.id, member?.notifications.meals, member?.notifications.water, s.logged, Math.round(s.waterMl / 50), s.waterGoalMl, s.glassMl, tr.sleepWelcomed && tr.remindBed && tr.bed, tr.sleepWelcomed && tr.remindWake && tr.wake, sleepLoggedToday, tr.weightReminder, member?.notifications.renewals, member?.plan?.renewsOn]);
 
   useEffect(() => {
     if (!member || !member.onboarded) {
@@ -79,6 +79,7 @@ export function Reminders() {
         wakeTime: tr.sleepWelcomed && tr.remindWake ? tr.wake : null,
         sleepLoggedToday,
         weighIn: tr.weightReminder,
+        renewal: member.notifications.renewals && member.plan ? { planId: member.plan.id, planName: member.plan.name, endsOn: member.plan.renewsOn } : null,
       });
     run();
     const sub = AppState.addEventListener("change", (st) => {
@@ -92,6 +93,7 @@ export function Reminders() {
     () =>
       onReminderTap((url) => {
         if (url === "/food/add" || url === "/food") router.push(url);
+        else if (url.startsWith("/upgrade/")) router.push(url as never);
       }),
     [router],
   );

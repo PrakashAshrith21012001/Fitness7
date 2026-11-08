@@ -424,7 +424,7 @@ create index if not exists payments_member on public.payments (member_id, paid_o
 create table if not exists public.reminders (
   id            uuid primary key default gen_random_uuid(),
   member_id     uuid not null references public.members(id) on delete cascade,
-  step          text not null check (step in ('t-7','t-3','due','grace','lapsed','winback','receipt')),
+  step          text not null check (step in ('t-7','t-3','due','grace','lapsed','winback','receipt','nudge')),
   channel       text not null default 'whatsapp_manual' check (channel in ('whatsapp_manual','whatsapp_api','push','sms')),
   for_end       date,              -- the end date the reminder was about
   sent_by       uuid,

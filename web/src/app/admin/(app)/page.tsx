@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { longDate, shortDate } from "@f7/content";
 import { overview } from "@/server/admin-data";
-import { duesBoard, renewalStats } from "@/server/billing";
+import { atRisk, duesBoard, renewalStats } from "@/server/billing";
 import { inr } from "@/lib/billing";
 import { supabaseConfigured } from "@/server/supabase";
 import { Badge, Card, Empty, Stat } from "@/components/admin/ui";
@@ -12,7 +12,7 @@ const time = (iso: unknown) => new Date(String(iso)).toLocaleTimeString("en-IN",
 
 /** /admin — the day at a glance, with a link into everything. */
 export default async function AdminHome() {
-  const [o, s, dues] = await Promise.all([overview(), renewalStats(), duesBoard()]);
+  const [o, s, dues, risk] = await Promise.all([overview(), renewalStats(), duesBoard(), atRisk()]);
   const toSend = dues.members.filter((m) => m.step && !m.remindedForStep && m.phone).length;
   const rate = s.due ? Math.round((s.renewed / s.due) * 100) : null;
   return (
@@ -49,11 +49,12 @@ export default async function AdminHome() {
           )}
         </Card>
 
-        <Card title="Renewals" action={<Link href="/admin/dues" className="text-sm text-lime underline">Open dues</Link>}>
-          <div className="grid grid-cols-3 gap-3">
+        <Card title="Renewals" action={<Link href={toSend ? "/admin/dues/today" : "/admin/dues"} className="text-sm text-lime underline">{toSend ? "Send today's" : "Open dues"}</Link>}>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="To remind" value={toSend} sub="today" />
             <Stat label="Due this week" value={s.dueWeek} sub={s.dueWeekInr ? inr(s.dueWeekInr) : undefined} />
             <Stat label="Renewal rate" value={rate === null ? "—" : `${rate}%`} sub="last 30 days" />
+            <Stat label="At risk" value={risk.length} sub="no visit 10+ days" />
           </div>
           <p className="mt-3 text-sm text-muted">
             {dues.members.filter((m) => m.stage === "grace").length} in grace · {dues.members.filter((m) => m.stage === "lapsed").length} lapsed this month.
