@@ -1,3 +1,4 @@
+import { phoneDisplay } from "@/lib/billing";
 import Link from "next/link";
 import { shortDate } from "@f7/content";
 import { istToday, listMembers, plusDays, type MemberFilter } from "@/server/admin-data";
@@ -55,7 +56,7 @@ export default async function MembersAdmin({ searchParams }: { searchParams: Pro
                     <div className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-2 font-bold text-sm">{(m.name || "?").trim().slice(0, 2).toUpperCase()}</div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold truncate">{m.name || "— (not onboarded)"}</p>
-                      <p className="text-muted text-xs truncate">{m.phone ?? m.email ?? ""} · joined {shortDate(m.joined_on)}{m.latest_kg ? ` · ${m.latest_kg} kg` : ""}</p>
+                      <p className="text-muted text-xs truncate">{m.phone ? phoneDisplay(m.phone) : m.email ?? ""} · joined {shortDate(m.joined_on)}{m.latest_kg ? ` · ${m.latest_kg} kg` : ""}</p>
                     </div>
                     <div className="hidden sm:block text-right text-xs text-muted">
                       <p>{m.last_checkin ? `last visit ${shortDate(m.last_checkin)}` : "no visits"}</p>

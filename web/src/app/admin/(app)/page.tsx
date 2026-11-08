@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { longDate, shortDate } from "@f7/content";
 import { overview } from "@/server/admin-data";
-import { atRisk, duesBoard, renewalStats } from "@/server/billing";
+import { atRisk, duesBoard, plansRunning, renewalStats } from "@/server/billing";
 import { inr } from "@/lib/billing";
 import { supabaseConfigured } from "@/server/supabase";
 import { Badge, Card, Empty, Stat } from "@/components/admin/ui";
@@ -12,8 +12,8 @@ const time = (iso: unknown) => new Date(String(iso)).toLocaleTimeString("en-IN",
 
 /** /admin — the day at a glance, with a link into everything. */
 export default async function AdminHome() {
-  const [o, s, dues, risk] = await Promise.all([overview(), renewalStats(), duesBoard(), atRisk()]);
-  const toSend = dues.members.filter((m) => m.step && !m.remindedForStep && m.phone).length;
+  const [o, s, dues, risk, running] = await Promise.all([overview(), renewalStats(), duesBoard(), atRisk(), plansRunning()]);
+  const toSend = dues.members.filter((m) => m.remindable).length;
   const rate = s.due ? Math.round((s.renewed / s.due) * 100) : null;
   return (
     <>
@@ -25,7 +25,7 @@ export default async function AdminHome() {
 
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Checked in" value={o.checkins.length} sub="today" />
-        <Stat label="Active members" value={o.active30} sub={`of ${o.members} · last 30 days`} />
+        <Stat label="Plans running" value={running} sub={`of ${o.members} members · ${o.active30} visited in 30 days`} />
         <Stat label="Collected today" value={inr(s.collectedToday)} sub={`${inr(s.collectedMonth)} this month`} />
         <Stat label="New leads" value={o.newLeads} sub="not yet contacted" />
       </div>

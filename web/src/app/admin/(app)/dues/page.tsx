@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { can, currentStaff } from "@/server/admin-auth";
-import { atRisk, duesBoard, renewalStats } from "@/server/billing";
+import { atRisk, duesBoard, gymUpi, renewalStats } from "@/server/billing";
 import { AT_RISK_DAYS, dayMonth, inr, normalizePhone, phoneDisplay, STAGES, STEP_LABEL, type ReminderStep } from "@/lib/billing";
 import { Badge, Card, Empty, Flash, Stat } from "@/components/admin/ui";
 import { MigrationNotice } from "@/components/admin/MigrationNotice";
@@ -27,7 +27,8 @@ export default async function DuesPage({ searchParams }: { searchParams: Promise
   const { staff } = await currentStaff();
   const money = can(staff, "admin");
   const [{ ready, members }, s, risk] = await Promise.all([duesBoard(), renewalStats(), atRisk()]);
-  const toSend = members.filter((m) => m.step && !m.remindedForStep && m.phone).length;
+  const toSend = members.filter((m) => m.remindable).length;
+  const upi = gymUpi();
   const toNudge = risk.filter((r) => !r.nudgedAt && r.phone && !members.some((m) => m.id === r.id)).length;
   const queued = toSend + toNudge;
   const rate = s.due ? Math.round((s.renewed / s.due) * 100) : null;
@@ -93,14 +94,18 @@ export default async function DuesPage({ searchParams }: { searchParams: Promise
                         <p className="mt-2 text-sm">{when}</p>
                         <p className="text-xs text-muted">{m.last_checkin ? `last visit ${dayMonth(m.last_checkin)}` : "no app check-ins"}</p>
                         <div className="mt-2">
-                          {sent ? (
+                          {m.paidTill ? (
+                            <Link href={`/admin/members/${m.id}`} className="block">
+                              <Badge tone="amber">Paid till {dayMonth(m.paidTill)} — fix end date</Badge>
+                            </Link>
+                          ) : sent ? (
                             <Badge tone="lime">{STEP_LABEL[m.step as ReminderStep]} sent · {ago(m.lastReminder!.sent_at)}</Badge>
                           ) : m.step ? (
                             <Badge tone="amber">{STEP_LABEL[m.step]} not sent</Badge>
                           ) : null}
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {m.phone && m.step ? (
+                          {m.phone && m.step && !m.paidTill ? (
                             <a
                               href={`/admin/remind?m=${m.id}`}
                               target="_blank"
@@ -173,6 +178,13 @@ export default async function DuesPage({ searchParams }: { searchParams: Promise
       </section>
 
       <p className="mt-6 text-xs text-muted">
+        {upi ? (
+          <>UPI pay links are on — reminders carry a link, and the money goes to <b className="font-mono">{upi}</b>. Change it with GYM_UPI_ID in Render.</>
+        ) : (
+          <>UPI pay links are off — set GYM_UPI_ID in Render to add a pay link to every reminder.</>
+        )}
+      </p>
+      <p className="mt-2 text-xs text-muted">
         &ldquo;Send WhatsApp&rdquo; opens WhatsApp with the message ready — press send there. It&apos;s logged here so nobody messages the same person twice.
       </p>
     </>

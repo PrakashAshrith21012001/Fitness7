@@ -112,6 +112,21 @@ export default async function MemberProfile({ params, searchParams }: { params: 
             );
           })()}
           {!bill.ready ? <MigrationNotice /> : null}
+          {(() => {
+            const latest = bill.memberships.filter((x) => x.status === "active").sort((x, y) => (x.ends_on < y.ends_on ? 1 : -1))[0];
+            if (!editor || !latest || (m.renews_on && latest.ends_on <= m.renews_on)) return null;
+            return (
+              <form action={setMemberPlanAction} className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-300/40 px-4 py-3 text-sm tone-amber">
+                <input type="hidden" name="member_id" value={m.id} />
+                <input type="hidden" name="plan_id" value={latest.plan_id} />
+                <input type="hidden" name="renews_on" value={latest.ends_on} />
+                <p className="min-w-0 flex-1">
+                  Payments cover till <b>{dayMonthYear(latest.ends_on)}</b>, but the end date says {m.renews_on ? dayMonthYear(m.renews_on) : "nothing"} — so they&apos;re being chased for a renewal they&apos;ve paid for.
+                </p>
+                <Button type="submit" variant="outline">Set end date to {dayMonth(latest.ends_on)}</Button>
+              </form>
+            );
+          })()}
 
           <div className="mt-5 grid gap-6 lg:grid-cols-2">
             {editor ? (
@@ -161,6 +176,7 @@ export default async function MemberProfile({ params, searchParams }: { params: 
               {editor ? (
                 <details className="mt-4 text-sm">
                   <summary className="cursor-pointer text-muted underline">Correct the plan or end date without a payment</summary>
+                  <p className="mt-2 text-xs text-muted">Only for fixing mistakes — it doesn&apos;t add or remove payments. To renew, use Record a payment.</p>
                   <form action={setMemberPlanAction} className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end">
                     <input type="hidden" name="member_id" value={m.id} />
                     <Field label="Plan">

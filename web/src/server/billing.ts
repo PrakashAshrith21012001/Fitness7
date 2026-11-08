@@ -26,6 +26,10 @@ export type DueMember = {
   lastReminder: { step: string; sent_at: string; by: string } | null;
   /** the reminder for today's step has already gone out for this end date */
   remindedForStep: boolean;
+  /** latest end date covered by an active (not voided) payment, if later than renews_on — the end date was set by hand and is behind the payments */
+  paidTill: string | null;
+  /** there is a reminder to send today (and they haven't already paid ahead) */
+  remindable: boolean;
 };
 
 export type PaymentRow = {
@@ -63,9 +67,16 @@ export async function duesBoard(): Promise<{ ready: boolean; members: DueMember[
     .lte("renews_on", plusDays(today, 7))
     .order("renews_on");
   if (error) return { ready: false, members: [] };
-  const rows = (data ?? []) as Omit<DueMember, "stage" | "days" | "step" | "expected" | "lastReminder" | "remindedForStep">[];
+  const rows = (data ?? []) as Omit<DueMember, "stage" | "days" | "step" | "expected" | "lastReminder" | "remindedForStep" | "paidTill" | "remindable">[];
   const ids = rows.map((r) => r.id);
-  const rem = ids.length ? await a.from("reminders").select("member_id, step, for_end, sent_at, sent_by_name").in("member_id", ids).gte("sent_at", plusDays(today, -120)).order("sent_at", { ascending: false }) : { data: [], error: null };
+  const [rem, ms] = ids.length
+    ? await Promise.all([
+        a.from("reminders").select("member_id, step, for_end, sent_at, sent_by_name").in("member_id", ids).gte("sent_at", plusDays(today, -120)).order("sent_at", { ascending: false }),
+        a.from("memberships").select("member_id, ends_on").eq("status", "active").in("member_id", ids),
+      ])
+    : [{ data: [], error: null }, { data: [], error: null }];
+  const paidEnd = new Map<string, string>();
+  for (const r of (ms.data ?? []) as { member_id: string; ends_on: string }[]) if (r.ends_on > (paidEnd.get(r.member_id) ?? "")) paidEnd.set(r.member_id, r.ends_on);
   const ready = !missing(rem.error);
   const byMember = new Map<string, { step: string; for_end: string | null; sent_at: string; sent_by_name: string }[]>();
   for (const r of (rem.data ?? []) as { member_id: string; step: string; for_end: string | null; sent_at: string; sent_by_name: string }[]) {
@@ -78,6 +89,9 @@ export async function duesBoard(): Promise<{ ready: boolean; members: DueMember[
     const step = stepFor(stage, days);
     const sent = byMember.get(r.id) ?? [];
     const last = sent[0];
+    const p = paidEnd.get(r.id);
+    const paidTill = p && p > r.renews_on ? p : null;
+    const remindedForStep = !!step && sent.some((s) => s.step === step && s.for_end === r.renews_on);
     return {
       ...r,
       stage,
@@ -85,7 +99,9 @@ export async function duesBoard(): Promise<{ ready: boolean; members: DueMember[
       step,
       expected: planById(r.plan_id ?? "")?.priceINR ?? 0,
       lastReminder: last ? { step: last.step, sent_at: last.sent_at, by: last.sent_by_name } : null,
-      remindedForStep: !!step && sent.some((s) => s.step === step && s.for_end === r.renews_on),
+      remindedForStep,
+      paidTill,
+      remindable: !!step && !remindedForStep && !!r.phone && !paidTill,
     };
   });
   return { ready, members };
@@ -307,7 +323,7 @@ export type SendItem = { id: string; name: string; phone: string; kind: Reminder
 export async function sendList(): Promise<{ ready: boolean; items: SendItem[] }> {
   const [{ ready, members }, risk] = await Promise.all([duesBoard(), atRisk()]);
   const due = members
-    .filter((m) => m.step && !m.remindedForStep && m.phone)
+    .filter((m) => m.remindable)
     .sort((x, y) => STEP_PRIORITY.indexOf(x.step!) - STEP_PRIORITY.indexOf(y.step!) || x.days - y.days)
     .map<SendItem>((m) => ({
       id: m.id,
@@ -323,4 +339,12 @@ export async function sendList(): Promise<{ ready: boolean; items: SendItem[] }>
     .filter((r) => !r.nudgedAt && r.phone && !seen.has(r.id))
     .map<SendItem>((r) => ({ id: r.id, name: r.name || "—", phone: r.phone!, kind: "nudge", detail: `no visit for ${r.away} days · plan runs till ${r.renews_on.slice(8)}/${r.renews_on.slice(5, 7)}`, amount: 0, href: `/admin/remind?m=${r.id}&step=nudge` }));
   return { ready, items: [...due, ...nudges] };
+}
+
+/** Members whose plan is still running today (the gym's real "active" count — most members never use app check-ins). */
+export async function plansRunning(): Promise<number> {
+  const a = admin();
+  if (!a) return 0;
+  const { count } = await a.from("members").select("id", { count: "exact", head: true }).gte("renews_on", istToday());
+  return count ?? 0;
 }
