@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows, Environment, Lightformer, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -110,21 +110,83 @@ function Figure({ still, channel }: { still: boolean; channel: AthleteChannel })
 }
 
 /** `channel` picks who drives the exercise: the Programs section (default) or the hero's own cycle. */
-export default function Athlete3D({ active, still, channel = "programs" }: { active: boolean; still: boolean; dark?: boolean; channel?: AthleteChannel }) {
+/** Soft radial gradient as a texture: floor light pool and backdrop glow. */
+function radialTexture(inner: string, outer: string) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const g = c.getContext("2d")!;
+  const grd = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grd.addColorStop(0, inner);
+  grd.addColorStop(1, outer);
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Studio set: a light pool on the floor with a thin lime ring, and a soft glow behind the athlete. */
+function Stage() {
+  const { pool, glow } = useMemo(
+    () => ({
+      pool: radialTexture("rgba(255,255,255,0.16)", "rgba(255,255,255,0)"),
+      glow: radialTexture("rgba(150,165,210,0.32)", "rgba(150,165,210,0)"),
+    }),
+    [],
+  );
   return (
-    <Canvas frameloop={active ? "always" : "never"} dpr={[1, 1.75]} camera={{ position: [0, 0.12, 4.15], fov: 30 }} gl={{ antialias: true, alpha: true }} shadows>
-      <ambientLight intensity={0.45} />
+    <>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.002, 0]} renderOrder={-1}>
+        <circleGeometry args={[1.35, 64]} />
+        <meshBasicMaterial map={pool} transparent depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.003, 0]} renderOrder={-1}>
+        <ringGeometry args={[0.92, 0.935, 96]} />
+        <meshBasicMaterial color="#8dff4f" transparent opacity={0.35} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.003, 0]} renderOrder={-1}>
+        <ringGeometry args={[1.18, 1.186, 96]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.08} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, 1.15, -1.6]} renderOrder={-2}>
+        <planeGeometry args={[4.2, 4.2]} />
+        <meshBasicMaterial map={glow} transparent depthWrite={false} toneMapped={false} />
+      </mesh>
+    </>
+  );
+}
+
+/** Phones (and iPhones especially) get a lighter GPU budget and a closer camera. */
+function deviceProfile() {
+  if (typeof window === "undefined") return { small: false, ios: false };
+  const small = window.matchMedia("(max-width: 640px)").matches;
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return { small, ios };
+}
+
+export default function Athlete3D({ active, still, channel = "programs" }: { active: boolean; still: boolean; dark?: boolean; channel?: AthleteChannel }) {
+  const [{ small, ios }] = useState(deviceProfile);
+  const light = small || ios;
+  return (
+    <Canvas
+      frameloop={active ? "always" : "never"}
+      dpr={light ? [1, ios ? 1.25 : 1.5] : [1, 1.75]}
+      camera={{ position: [0, small ? 0.08 : 0.12, small ? 3.55 : 4.15], fov: 30 }}
+      gl={{ antialias: !light, alpha: true, powerPreference: light ? "low-power" : "high-performance" }}
+    >
+      <ambientLight intensity={0.5} />
       {/* soft key from the front-left, cool rim behind for the silhouette, a touch of fill */}
-      <directionalLight position={[2.5, 4, 3.5]} intensity={2.2} castShadow shadow-mapSize={[1024, 1024]} />
-      <directionalLight position={[-3, 2.5, -3]} intensity={2.4} color="#b9c8ff" />
-      <directionalLight position={[3, 1.2, -2.5]} intensity={1} />
+      <directionalLight position={[2.5, 4, 3.5]} intensity={2.2} />
+      <directionalLight position={[-3, 2.5, -3]} intensity={2.6} color="#b9c8ff" />
+      <directionalLight position={[3, 1.2, -2.5]} intensity={1.1} />
       <group position={[0, -0.95, 0]}>
+        <Stage />
         <Suspense fallback={null}>
           <Figure still={still} channel={channel} />
         </Suspense>
       </group>
-      <ContactShadows position={[0, -0.95, 0]} opacity={0.75} scale={5} blur={2.4} far={2.2} resolution={512} color="#000000" />
-      <Environment resolution={128} frames={1}>
+      <ContactShadows position={[0, -0.948, 0]} opacity={0.8} scale={4} blur={2.2} far={2} resolution={light ? 256 : 512} frames={still ? 1 : Infinity} color="#000000" />
+      <Environment resolution={light ? 32 : 64} frames={1}>
         <Lightformer form="rect" intensity={1.4} position={[0, 4, 1]} scale={[6, 1.5, 1]} />
         <Lightformer form="rect" intensity={0.8} position={[-3, 1, 2]} rotation-y={Math.PI / 2} scale={[3, 4, 1]} />
       </Environment>

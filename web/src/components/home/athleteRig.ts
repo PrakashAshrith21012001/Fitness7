@@ -93,8 +93,8 @@ const EX: Record<Exercise, (t: number, r: Rest) => Pose> = {
       gaze: { pitch: -0.12 * p, yaw: 0 },
       feet: standingFeet(r, 0.21, 0.42),
       hands: [
-        { frame: "chest", pos: V(0.055, -0.07, 0.25), pole: V(0.35, -1, -0.1) },
-        { frame: "chest", pos: V(-0.055, -0.07, 0.25), pole: V(-0.35, -1, -0.1) },
+        { frame: "chest", pos: V(0.06, -0.01, 0.23), pole: V(0.35, -1, -0.1) },
+        { frame: "chest", pos: V(-0.06, -0.01, 0.23), pole: V(-0.35, -1, -0.1) },
       ],
       grip: [0.9, 0.9],
       yaw: -0.55,
@@ -732,7 +732,7 @@ export class AthleteProps {
 
     const rowbell = inHand(1, 0.13, 0.068);
 
-    const goblet = dumbbellMesh(mats, 0.16, 0.075);
+    const goblet = dumbbellMesh(mats, 0.12, 0.068);
     this.group.add(goblet);
 
     const bell = new THREE.Group();
@@ -790,7 +790,7 @@ export class AthleteProps {
     const mid = a.add(b).multiplyScalar(0.5);
     this.group.worldToLocal(mid);
     const goblet = this.items.goblet;
-    goblet.position.copy(mid).add(V(0, -0.05, 0.02));
+    goblet.position.copy(mid).add(V(0, -0.075, 0.035)); // hands cup the top plate
     goblet.rotation.set(0, 0, 0);
 
     const bell = this.items.bell;

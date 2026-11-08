@@ -30,9 +30,10 @@ export function Programs() {
   const angle = useRef<HTMLSpanElement>(null);
   const still = useSyncExternalStore(noop, prefersReducedMotion, () => false);
 
-  const show = (i: number) => {
-    const c = classes[Math.max(0, Math.min(classes.length - 1, i))];
-    athlete.exercise = EXERCISE_FOR[c.id]?.id ?? "squat";
+  const show = (raw: number) => {
+    // the row ends with a "Not sure where to start?" card — clamp so it never points past the last programme
+    const i = Math.max(0, Math.min(classes.length - 1, Number.isFinite(raw) ? raw : 0));
+    athlete.exercise = EXERCISE_FOR[classes[i].id]?.id ?? "squat";
     setActive((v) => (v === i ? v : i));
   };
 
