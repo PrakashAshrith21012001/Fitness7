@@ -1,35 +1,29 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowRight, Star } from "lucide-react";
 import { brand, reviews, wa } from "@f7/content";
 import { useOpenStatus } from "@/lib/useOpenStatus";
-import { ScrollTrigger, prefersReducedMotion, useGSAP } from "@/lib/gsap";
-import { heroScroll } from "@/lib/heroScroll";
+import { prefersReducedMotion } from "@/lib/gsap";
+import { HERO_PHOTOS } from "@/lib/heroPhotos";
 import { Magnetic } from "@/components/home/Magnetic";
-import { useTheme } from "@/components/theme/useTheme";
-
-// three.js only loads in the browser, after the words are on screen.
-const Dumbbell3D = dynamic(() => import("@/components/home/Dumbbell3D"), {
-  ssr: false,
-  loading: () => <div className="size-full" />,
-});
 
 /**
- * Hero: one sentence, one primary action, proof underneath, and a 3D
- * dumbbell that turns as you scroll. The live open/closed chip answers the
- * first local question before it's asked.
+ * Hero: one sentence, one primary action, proof underneath, and a photo
+ * stage of real training moments — each cross-fades in with a slow push-in,
+ * labelled with its programme and the muscles it works. The live
+ * open/closed chip answers the first local question before it's asked.
  */
 const noop = () => () => {};
 
 export function Hero() {
   const status = useOpenStatus();
-  const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(true);
   const still = useSyncExternalStore(noop, prefersReducedMotion, () => false);
-  const [theme] = useTheme();
+  const [idx, setIdx] = useState(0);
+  const count = HERO_PHOTOS.length;
 
   useEffect(() => {
     const el = stage.current;
@@ -39,23 +33,17 @@ export function Hero() {
     return () => io.disconnect();
   }, []);
 
-  useGSAP(
-    () => {
-      ScrollTrigger.create({
-        trigger: root.current,
-        start: "top top",
-        end: "bottom top",
-        scrub: true,
-        onUpdate: (self) => {
-          heroScroll.p = self.progress;
-        },
-      });
-    },
-    { scope: root },
-  );
+  // next photo every 7 s while the stage is on screen
+  useEffect(() => {
+    if (!inView || still || count < 2) return;
+    const id = setInterval(() => setIdx((i) => (i + 1) % count), 7000);
+    return () => clearInterval(id);
+  }, [inView, still, count]);
+
+  const photo = HERO_PHOTOS[idx];
 
   return (
-    <section id="top" ref={root} className="relative overflow-hidden">
+    <section id="top" className="relative overflow-hidden">
       <div aria-hidden className="grid-paper pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_60%_at_70%_40%,#000_20%,transparent_75%)]" />
 
       <div className="relative mx-auto grid min-h-[100svh] max-w-7xl items-center gap-4 px-5 pb-10 pt-28 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:pb-16">
@@ -99,16 +87,53 @@ export function Hero() {
           </div>
         </div>
 
-        <div ref={stage} className="relative h-[340px] sm:h-[460px] lg:h-[640px]" aria-hidden>
-          <Dumbbell3D active={inView} still={still} dark={theme === "dark"} />
+        <div className="relative">
+          <div ref={stage} className="relative h-[460px] overflow-hidden rounded-[28px] bg-surface-2 shadow-[0_40px_80px_-40px_rgba(18,19,22,0.55)] ring-1 ring-line sm:h-[560px] lg:h-[min(74vh,660px)]">
+            {HERO_PHOTOS.map((p, i) => (
+              <div key={p.src} className={`absolute inset-0 transition-opacity duration-[1200ms] ease-out ${i === idx ? "opacity-100" : "opacity-0"}`} aria-hidden={i !== idx}>
+                <Image
+                  src={p.src}
+                  alt={p.alt}
+                  fill
+                  priority={i === 0}
+                  sizes="(min-width: 1024px) 46vw, 100vw"
+                  placeholder="blur"
+                  blurDataURL={p.blur}
+                  className={`object-cover ${i === idx && !still ? "animate-[kenburns_9s_ease-out_forwards]" : ""}`}
+                  style={{ objectPosition: p.focus }}
+                />
+              </div>
+            ))}
+            {/* label strip */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-5 pb-5 pt-20 text-[#ffffff] sm:px-6 sm:pb-6">
+              <div key={idx} className="animate-[fade_.6s_ease]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#ffffff]/75">{photo.programme}</p>
+                <p className="mt-1 text-xl font-extrabold tracking-[-0.02em] sm:text-2xl">{photo.move}</p>
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {photo.works.map((w) => (
+                    <span key={w} className="rounded-full bg-[#ffffff]/15 px-2.5 py-1 text-[11px] font-semibold backdrop-blur-sm ring-1 ring-[#ffffff]/25">
+                      {w}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {count > 1 ? (
+                <div className="absolute bottom-6 right-5 flex gap-1.5 sm:right-6" aria-hidden>
+                  {HERO_PHOTOS.map((p, i) => (
+                    <span key={p.src} className={`h-1 rounded-full transition-all duration-500 ${i === idx ? "w-6 bg-brand" : "w-2 bg-[#ffffff]/40"}`} />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
           {/* floating facts */}
-          <div data-speed="1.08" className="pointer-events-none absolute left-2 top-[12%] hidden sm:left-6 sm:block">
+          <div data-speed="1.08" className="pointer-events-none absolute -left-7 top-[9%] hidden lg:block">
             <div className="glass rounded-2xl border border-line px-4 py-3 shadow-[0_20px_40px_-24px_rgba(18,19,22,0.35)]">
               <p className="cond tnum text-3xl leading-none text-fg">5 AM</p>
               <p className="mt-1 text-xs text-muted">first class, six days a week</p>
             </div>
           </div>
-          <div data-speed="0.92" className="pointer-events-none absolute bottom-[14%] right-2 hidden sm:right-6 sm:block">
+          <div data-speed="0.92" className="pointer-events-none absolute -right-5 top-[5%] hidden lg:block">
             <div className="glass rounded-2xl border border-line px-4 py-3 shadow-[0_20px_40px_-24px_rgba(18,19,22,0.35)]">
               <p className="cond tnum text-3xl leading-none text-fg">12 treks</p>
               <p className="mt-1 text-xs text-muted">a year, members first</p>

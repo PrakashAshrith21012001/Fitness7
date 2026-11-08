@@ -4,7 +4,8 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows, Environment, Lightformer, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { athlete, MOVE_BY_EXERCISE, type Exercise } from "@/lib/athlete";
+import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { CHANNELS, MOVE_BY_EXERCISE, type AthleteChannel, type Exercise } from "@/lib/athlete";
 import { AthleteProps, AthleteRig, athleteMaterial, REGIONS } from "@/components/home/athleteRig";
 
 /**
@@ -19,17 +20,18 @@ const MODEL = "/models/athlete.glb";
 const FORM = "#8dff4f";
 const UP = new THREE.Vector3(0, 1, 0);
 
-function Figure({ still }: { still: boolean }) {
+function Figure({ still, channel }: { still: boolean; channel: AthleteChannel }) {
   const gltf = useGLTF(MODEL);
   const { rig, props } = useMemo(() => {
-    const r = new AthleteRig(gltf.scene, [...REGIONS]);
+    // each canvas gets its own skeleton + geometry (the hero and Programs both show one)
+    const r = new AthleteRig(cloneSkinned(gltf.scene), [...REGIONS]);
     const { material, uniforms } = athleteMaterial();
     r.mesh.material = material;
     r.pulse = uniforms.uPulse;
     return { rig: r, props: new AthleteProps(r) };
   }, [gltf]);
 
-  const current = useRef<Exercise>(athlete.exercise);
+  const current = useRef<Exercise>(CHANNELS[channel].exercise);
   const t0 = useRef(0);
   const segA = useRef<THREE.Group>(null);
   const segB = useRef<THREE.Group>(null);
@@ -48,8 +50,9 @@ function Figure({ still }: { still: boolean }) {
   useFrame((state, delta) => {
     const dt = Math.min(delta, 1 / 20);
     const now = state.clock.elapsedTime;
-    if (current.current !== athlete.exercise) {
-      current.current = athlete.exercise;
+    const src = CHANNELS[channel];
+    if (current.current !== src.exercise) {
+      current.current = src.exercise;
       t0.current = now;
       rig.beginBlend();
     }
@@ -81,7 +84,7 @@ function Figure({ still }: { still: boolean }) {
       pivot.current.position.copy(p);
       pivot.current.scale.setScalar(1 + 0.25 * pulse);
     }
-    athlete.angle = Math.round(THREE.MathUtils.radToDeg(a.clone().sub(p).angleTo(b.clone().sub(p))));
+    src.angle = Math.round(THREE.MathUtils.radToDeg(a.clone().sub(p).angleTo(b.clone().sub(p))));
   });
 
   const segment = (ref: React.RefObject<THREE.Group | null>) => (
@@ -106,7 +109,8 @@ function Figure({ still }: { still: boolean }) {
   );
 }
 
-export default function Athlete3D({ active, still }: { active: boolean; still: boolean; dark?: boolean }) {
+/** `channel` picks who drives the exercise: the Programs section (default) or the hero's own cycle. */
+export default function Athlete3D({ active, still, channel = "programs" }: { active: boolean; still: boolean; dark?: boolean; channel?: AthleteChannel }) {
   return (
     <Canvas frameloop={active ? "always" : "never"} dpr={[1, 1.75]} camera={{ position: [0, 0.12, 4.15], fov: 30 }} gl={{ antialias: true, alpha: true }} shadows>
       <ambientLight intensity={0.45} />
@@ -116,7 +120,7 @@ export default function Athlete3D({ active, still }: { active: boolean; still: b
       <directionalLight position={[3, 1.2, -2.5]} intensity={1} />
       <group position={[0, -0.95, 0]}>
         <Suspense fallback={null}>
-          <Figure still={still} />
+          <Figure still={still} channel={channel} />
         </Suspense>
       </group>
       <ContactShadows position={[0, -0.95, 0]} opacity={0.75} scale={5} blur={2.4} far={2.2} resolution={512} color="#000000" />

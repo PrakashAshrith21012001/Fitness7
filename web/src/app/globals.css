@@ -218,3 +218,8 @@ html.motion-ok [data-reveal="lines"] { opacity: 1; visibility: hidden; }
 
 /* Theme switch: the new theme is revealed by a growing circle (see ThemeToggle) */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+@keyframes kenburns {
+  from { transform: scale(1.0); }
+  to { transform: scale(1.07); }
+}

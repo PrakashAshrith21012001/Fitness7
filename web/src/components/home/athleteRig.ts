@@ -345,6 +345,7 @@ export class AthleteRig {
     if (!mesh) throw new Error("athlete.glb has no skinned mesh");
     this.mesh = mesh;
     const m = this.mesh;
+    m.geometry = m.geometry.clone(); // per-instance attributes (heat) without touching the shared cache
     m.frustumCulled = false;
     m.castShadow = true;
     m.receiveShadow = true;

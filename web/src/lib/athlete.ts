@@ -6,7 +6,17 @@
  */
 export type Exercise = "squat" | "jacks" | "swing" | "run" | "warrior" | "lunge" | "row" | "box";
 
-export const athlete: { exercise: Exercise; angle: number } = { exercise: "squat", angle: 180 };
+export type AthleteState = { exercise: Exercise; angle: number };
+
+/** Driven by the Programs section (the card in view). */
+export const athlete: AthleteState = { exercise: "squat", angle: 180 };
+
+/** The hero's own athlete, which cycles through a few signature lifts. */
+export const heroAthlete: AthleteState = { exercise: "row", angle: 180 };
+export const HERO_SEQUENCE: Exercise[] = ["row", "squat", "swing", "box"];
+
+export type AthleteChannel = "programs" | "hero";
+export const CHANNELS: Record<AthleteChannel, AthleteState> = { programs: athlete, hero: heroAthlete };
 
 export type Muscle = "pecs" | "abs" | "obliques" | "delts" | "biceps" | "triceps" | "forearms" | "lats" | "traps" | "glutes" | "quads" | "hams" | "calves";
 
