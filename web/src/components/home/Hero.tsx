@@ -46,7 +46,7 @@ export function Hero() {
     <section id="top" className="relative overflow-hidden">
       <div aria-hidden className="grid-paper pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_60%_at_70%_40%,#000_20%,transparent_75%)]" />
 
-      <div className="relative mx-auto grid min-h-[100svh] max-w-7xl items-center gap-4 px-5 pb-10 pt-28 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:pb-16">
+      <div className="relative mx-auto grid min-h-[100svh] max-w-7xl items-center gap-4 px-5 pb-10 pt-32 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:pb-16">
         <div className="relative z-10">
           <p data-reveal="up" className="inline-flex min-h-9 items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-[13px] font-semibold text-fg">
             <span className="relative flex size-2">
@@ -57,7 +57,7 @@ export function Hero() {
           </p>
 
           <h1 data-reveal="lines" className="h-hero mt-6 text-fg">
-            The floor is just base&nbsp;camp.
+            The floor is just <span style={{ color: "var(--p-accent)" }}>base&nbsp;camp.</span>
           </h1>
 
           <p data-reveal="up" className="mt-6 max-w-lg text-[17px] leading-relaxed text-muted sm:text-lg">
