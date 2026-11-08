@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
   // Monorepo: trace files from the repo root, not just web/
   outputFileTracingRoot: path.join(__dirname, ".."),
   images: {
-    formats: ["image/avif", "image/webp"],
+    // Serve the photos as they are (they're already web-sized JPGs). On-the-fly
+    // AVIF/WebP conversion with sharp pushed the 512 MB Render instance to ~900 MB
+    // and crashed it. Blur placeholders and lazy loading still work.
+    unoptimized: true,
   },
 };
 
