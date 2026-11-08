@@ -69,3 +69,17 @@ Run `supabase/migration-003-admin.sql` once (SQL editor) on a project created be
 - Storage bucket **`media`** — public read, 5 MB, JPEG/PNG/WebP. Trek photos go to `treks/<id>/…`. Uploads happen only through `/api/admin/upload` with a staff cookie.
 
 **First admin:** sign in at `/admin/login?mode=owner` with the env `OWNER_PASSWORD`, open *Staff*, add yourself as *owner*. From then on use email + password at `/admin/login`.
+
+## Renewals & billing (Phase 1)
+
+Run `supabase/migration-005-billing.sql` once (SQL editor → paste → Run) on any project created before November 2026; fresh projects get it from `schema.sql`. It adds:
+
+- `memberships` — every plan period a member has paid for.
+- `payments` — every payment, with a numbered receipt (`F7/2026-27/0001`, restarting each April) and a private receipt link.
+- `reminders` — every renewal message sent from the Dues board, so nobody is messaged twice.
+- `record_payment()` / `void_payment()` — save or cancel a payment in one step and keep `members.plan_id / plan_name / renews_on` (what the app shows) in sync.
+
+Optional settings on Render (Environment):
+
+- `GYM_UPI_ID` — e.g. `fitness7@okaxis`. If set, reminders say "Pay by UPI to …".
+- `GYM_GSTIN` — printed on receipts once the gym is GST-registered.

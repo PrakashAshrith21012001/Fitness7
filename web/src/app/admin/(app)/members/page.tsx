@@ -22,9 +22,12 @@ export default async function MembersAdmin({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <header>
-        <p className="text-xs tracking-[0.18em] uppercase text-lime font-bold">People</p>
-        <h1 className="font-display text-3xl font-bold mt-1">Members</h1>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs tracking-[0.18em] uppercase text-lime font-bold">People</p>
+          <h1 className="font-display text-3xl font-bold mt-1">Members</h1>
+        </div>
+        <Link href="/admin/members/new" className="btn-green inline-flex min-h-[44px] items-center rounded-full px-5 font-bold text-on-accent">+ Add member</Link>
       </header>
 
       <form className="mt-5 flex flex-wrap items-center gap-2" action="/admin/members">

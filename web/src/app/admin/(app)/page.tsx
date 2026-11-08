@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { longDate, shortDate } from "@f7/content";
 import { overview } from "@/server/admin-data";
+import { duesBoard, renewalStats } from "@/server/billing";
+import { inr } from "@/lib/billing";
 import { supabaseConfigured } from "@/server/supabase";
 import { Badge, Card, Empty, Stat } from "@/components/admin/ui";
 
@@ -10,19 +12,21 @@ const time = (iso: unknown) => new Date(String(iso)).toLocaleTimeString("en-IN",
 
 /** /admin — the day at a glance, with a link into everything. */
 export default async function AdminHome() {
-  const o = await overview();
+  const [o, s, dues] = await Promise.all([overview(), renewalStats(), duesBoard()]);
+  const toSend = dues.members.filter((m) => m.step && !m.remindedForStep && m.phone).length;
+  const rate = s.due ? Math.round((s.renewed / s.due) * 100) : null;
   return (
     <>
       <header>
         <p className="text-xs tracking-[0.18em] uppercase text-lime font-bold">Today</p>
         <h1 className="font-display text-3xl font-bold mt-1">{longDate(o.today)}</h1>
-        {!supabaseConfigured ? <p className="text-sm text-amber-300 mt-2">Supabase isn't configured on this server — nothing to show yet.</p> : null}
+        {!supabaseConfigured ? <p className="text-sm tone-amber mt-2">Supabase isn't configured on this server — nothing to show yet.</p> : null}
       </header>
 
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Checked in" value={o.checkins.length} sub="today" />
         <Stat label="Active members" value={o.active30} sub={`of ${o.members} · last 30 days`} />
-        <Stat label="Plans ending" value={o.expiring.length} sub="next 7 days" />
+        <Stat label="Collected today" value={inr(s.collectedToday)} sub={`${inr(s.collectedMonth)} this month`} />
         <Stat label="New leads" value={o.newLeads} sub="not yet contacted" />
       </div>
 
@@ -45,7 +49,18 @@ export default async function AdminHome() {
           )}
         </Card>
 
-        <Card title={`Plans ending this week · ${o.expiring.length}`} action={<Link href="/admin/members?filter=expiring" className="text-sm text-lime underline">Open list</Link>}>
+        <Card title="Renewals" action={<Link href="/admin/dues" className="text-sm text-lime underline">Open dues</Link>}>
+          <div className="grid grid-cols-3 gap-3">
+            <Stat label="To remind" value={toSend} sub="today" />
+            <Stat label="Due this week" value={s.dueWeek} sub={s.dueWeekInr ? inr(s.dueWeekInr) : undefined} />
+            <Stat label="Renewal rate" value={rate === null ? "—" : `${rate}%`} sub="last 30 days" />
+          </div>
+          <p className="mt-3 text-sm text-muted">
+            {dues.members.filter((m) => m.stage === "grace").length} in grace · {dues.members.filter((m) => m.stage === "lapsed").length} lapsed this month.
+          </p>
+        </Card>
+
+        <Card title={`Plans ending this week · ${o.expiring.length}`} action={<Link href="/admin/dues" className="text-sm text-lime underline">Open dues</Link>}>
           {o.expiring.length ? (
             <ul className="divide-y divide-line">
               {o.expiring.map((r, i) => (

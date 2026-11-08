@@ -7,6 +7,8 @@ import { cn } from "@/lib/cn";
 
 const ITEMS: { href: string; label: string; min: StaffRole }[] = [
   { href: "/admin", label: "Today", min: "coach" },
+  { href: "/admin/dues", label: "Dues", min: "coach" },
+  { href: "/admin/collections", label: "Collections", min: "admin" },
   { href: "/admin/treks", label: "Treks", min: "coach" },
   { href: "/admin/members", label: "Members", min: "coach" },
   { href: "/admin/leads", label: "Leads", min: "coach" },

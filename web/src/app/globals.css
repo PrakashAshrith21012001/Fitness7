@@ -224,3 +224,9 @@ html.motion-ok [data-reveal="lines"] { opacity: 1; visibility: hidden; }
   from { transform: scale(1.0); }
   to { transform: scale(1.07); }
 }
+
+/* admin status colours that stay readable in both themes */
+.tone-amber { color: #9a5b00; }
+.tone-red { color: #c0262d; }
+:root[data-theme="dark"] .tone-amber { color: #f2c14e; }
+:root[data-theme="dark"] .tone-red { color: #ff7b7b; }

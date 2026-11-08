@@ -46,7 +46,7 @@ export function Button({ children, variant = "green", className, ...rest }: { ch
   const v = {
     green: "btn-green text-on-accent",
     outline: "border border-line text-white hover:border-lime/50",
-    danger: "border border-red-400/40 text-red-400 hover:bg-red-400/10",
+    danger: "border border-red-400/40 tone-red hover:bg-red-400/10",
     ghost: "text-lime hover:underline",
   }[variant];
   return (
@@ -59,8 +59,8 @@ export function Button({ children, variant = "green", className, ...rest }: { ch
 export function Badge({ children, tone = "muted" }: { children: ReactNode; tone?: "lime" | "amber" | "red" | "muted" }) {
   const t = {
     lime: "text-lime border-lime/30",
-    amber: "text-amber-300 border-amber-300/30",
-    red: "text-red-400 border-red-400/30",
+    amber: "tone-amber border-amber-300/30",
+    red: "tone-red border-red-400/30",
     muted: "text-muted border-line",
   }[tone];
   return <span className={cn("inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em]", t)}>{children}</span>;
@@ -79,7 +79,7 @@ export function Stat({ label, value, sub }: { label: string; value: string | num
 export function Flash({ ok, error }: { ok?: string; error?: string }) {
   if (!ok && !error) return null;
   return (
-    <p className={cn("rounded-xl border px-4 py-3 text-sm", error ? "border-red-400/40 text-red-300" : "border-lime/40 text-lime")}>
+    <p className={cn("rounded-xl border px-4 py-3 text-sm", error ? "border-red-400/40 tone-red" : "border-lime/40 text-lime")}>
       {error ?? ok}
     </p>
   );

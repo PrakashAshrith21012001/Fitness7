@@ -180,7 +180,7 @@ export function TrekForm({ trek, action }: { trek: TrekRow | null; action: (fd: 
             </div>
             <p className="mt-1 text-xs text-muted">JPEG/PNG/WebP, resized to 1600 px before upload. Up to 12.</p>
           </div>
-          {err ? <p className="text-sm text-red-300">{err}</p> : null}
+          {err ? <p className="text-sm tone-red">{err}</p> : null}
         </section>
       </div>
 
