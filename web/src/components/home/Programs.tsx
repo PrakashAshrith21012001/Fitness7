@@ -1,8 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ArrowUpRight, Dumbbell, Flame, HeartPulse, Sparkles, Swords, Target, Wind, Zap, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Clock, Dumbbell, Flame, HeartPulse, Sparkles, Swords, Target, Wind, Zap, type LucideIcon } from "lucide-react";
 import { classes, wa } from "@f7/content";
 import { gsap, prefersReducedMotion, useGSAP } from "@/lib/gsap";
 import { athlete, EXERCISE_FOR } from "@/lib/athlete";
@@ -167,21 +168,36 @@ export function Programs() {
                     key={c.id}
                     data-card
                     onPointerEnter={() => show(i)}
-                    className="pane group flex h-[420px] w-[78vw] max-w-[340px] shrink-0 flex-col p-6 transition-shadow duration-300 hover:shadow-[0_30px_60px_-30px_rgba(18,19,22,0.35)] sm:w-[340px] lg:h-[460px] lg:w-[360px] lg:max-w-none"
+                    className="pane group flex h-[500px] w-[78vw] max-w-[340px] shrink-0 flex-col overflow-hidden p-0 transition-shadow duration-300 hover:shadow-[0_30px_60px_-30px_rgba(18,19,22,0.35)] sm:w-[340px] lg:h-[min(520px,72svh)] lg:w-[360px] lg:max-w-none"
                   >
-                    <div className="flex items-start justify-between">
-                      <span className="cond tnum text-[64px] leading-[0.8] text-transparent [-webkit-text-stroke:1.5px_var(--p-fg)]">{String(i + 1).padStart(2, "0")}</span>
-                      <span className="grid size-12 place-items-center rounded-full bg-surface-2 transition-colors duration-300 group-hover:bg-brand">
-                        <Icon className="size-5 text-fg" strokeWidth={1.8} />
+                    {/* photo with number + icon over it */}
+                    <div className="relative h-[200px] shrink-0 overflow-hidden lg:h-[42%]">
+                      <Image
+                        src={c.image ?? "/classes/strength.jpg"}
+                        alt=""
+                        fill
+                        sizes="360px"
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      />
+                      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/5 to-black/25" />
+                      <span className="cond tnum absolute left-5 top-4 text-[56px] leading-[0.8] text-transparent [-webkit-text-stroke:1.5px_#ffffff]">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="absolute right-4 top-4 grid size-11 place-items-center rounded-full bg-[#ffffff]/90 backdrop-blur transition-colors duration-300 group-hover:bg-brand">
+                        <Icon className="size-5 text-[#121316]" strokeWidth={1.8} />
                       </span>
                     </div>
-                    <h3 className="mt-auto text-[28px] font-extrabold leading-[1.05] tracking-[-0.03em] text-fg">{c.name}</h3>
-                    <p className="mt-2 text-[15px] font-semibold text-fg/80">{c.tagline}</p>
-                    <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted">{c.description}</p>
-                    <dl className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
-                      <dd className="tnum rounded-full bg-surface-2 px-3 py-1.5 text-fg">{c.durationMin} min</dd>
-                      <dd className="rounded-full bg-surface-2 px-3 py-1.5 text-fg">{c.intensity}</dd>
-                    </dl>
+                    <div className="flex min-h-0 flex-1 flex-col p-5 sm:p-6">
+                      <h3 className="cond text-[30px] leading-[0.95] text-fg">{c.name}</h3>
+                      <p className="mt-1.5 text-[14px] font-semibold text-fg/80">{c.tagline}</p>
+                      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">{c.description}</p>
+                      <p className="mt-auto flex items-start gap-2 pt-3 text-[13px] font-semibold text-fg">
+                        <Clock className="mt-0.5 size-3.5 shrink-0 text-muted" strokeWidth={2.2} />
+                        <span className="tnum">{c.schedule}</span>
+                      </p>
+                      <dl className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                        <dd className="tnum rounded-full bg-surface-2 px-3 py-1.5 text-fg">{c.durationMin} min</dd>
+                        <dd className="rounded-full bg-surface-2 px-3 py-1.5 text-fg">{c.intensity}</dd>
+                      </dl>
+                    </div>
                   </article>
                 );
               })}
@@ -190,7 +206,7 @@ export function Programs() {
                 href={wa.trial()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex h-[420px] w-[78vw] max-w-[340px] shrink-0 flex-col justify-between rounded-[20px] bg-fg p-6 text-paper sm:w-[340px] lg:h-[460px] lg:w-[360px] lg:max-w-none"
+                className="group flex h-[500px] w-[78vw] max-w-[340px] shrink-0 flex-col justify-between rounded-[20px] bg-fg p-6 text-paper sm:w-[340px] lg:h-[min(520px,72svh)] lg:w-[360px] lg:max-w-none"
               >
                 <ArrowUpRight className="size-10 transition-transform duration-500 group-hover:-translate-y-1 group-hover:translate-x-1" strokeWidth={1.6} />
                 <span>
